@@ -1,24 +1,29 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AuthPage from "./page/AuthPage";
+import CustomerLayout from "./layout/CustomerLayout/CustomerLayout";
+import AdminLayout from "./layout/AdminLayout/AdminLayout";
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+
+        {/* Layout khách hàng */}
+        <Route path="/home" element={<CustomerLayout />}>
+          {/* Trang login đặt ở layout Customer */}
+         
+        </Route>
+
+        {/* Layout admin */}
+        <Route path="/admin" element={<AdminLayout />}>
+          {/* ví dụ route con của admin */}
+          {/* <Route path="dashboard" element={<Dashboard />} /> */}
+        </Route>
+        <Route path="/" element={<AuthPage />} />
+
+      </Routes>
+    </BrowserRouter>
   );
 }
 

@@ -1,0 +1,226 @@
+import { useState } from "react";
+import { login, register } from "../api/service/authService";
+import "../style/AuthPage.css";
+import logo from "../asset/logo.png";
+import { useNavigate } from "react-router-dom";
+
+const initialFormState = {
+  fullName: "",
+  Phone: "",
+  password: "",
+  confirmPassword: "",
+};
+
+function AuthPage() {
+  const [mode, setMode] = useState("login");
+  const [formData, setFormData] = useState(initialFormState);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setStatus({ type: "", message: "" });
+
+    if (mode === "register" && formData.password !== formData.confirmPassword) {
+      setStatus({ type: "error", message: "Mật khẩu xác nhận không khớp" });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (mode === "login") {
+        const { data } = await login({
+          identifier: formData.Phone,
+          password: formData.password,
+        });
+
+        const token = data?.result?.token;
+        if (token) {
+          sessionStorage.setItem("token", token);
+        }
+        const user = data?.result?.user;
+        if (user) {
+          if (user.role === "Customer") {
+            navigate("/home");
+          } else {
+            navigate("/admin");
+          }
+        }
+      } else {
+        await register({
+          fullName: formData.fullName,
+          identifier: formData.Phone,
+          password: formData.password,
+        });
+        setStatus({
+          type: "success",
+          message: "Tạo tài khoản thành công, hãy đăng nhập.",
+        });
+        setMode("login");
+      }
+      setFormData(initialFormState);
+    } catch (error) {
+      const apiMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Có lỗi xảy ra, vui lòng thử lại.";
+      setStatus({ type: "error", message: apiMessage });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth">
+      <div className="auth__card">
+        <section className="auth__hero">
+          <div className="auth__badge">
+            <span className="auth__badge-icon">💬</span>
+          </div>
+          <h1>Kết nối với mọi người</h1>
+          <p>
+            Nơi bạn có thể trò chuyện, chia sẻ khoảnh khắc và giữ liên lạc với
+            những người quan trọng.
+          </p>
+          <img src={logo} alt="Connect illustration" />
+        </section>
+
+        <section className="auth__form">
+          <div className="auth__tab">
+            <button
+              className={mode === "login" ? "active" : ""}
+              onClick={() => setMode("login")}
+              type="button"
+            >
+              Đăng nhập
+            </button>
+            <button
+              className={mode === "register" ? "active" : ""}
+              onClick={() => setMode("register")}
+              type="button"
+            >
+              Đăng ký
+            </button>
+          </div>
+
+          <div className="auth__welcome">
+            <h2>{mode === "login" ? "Chào mừng trở lại!" : "Tạo tài khoản"}</h2>
+            <p>
+              {mode === "login"
+                ? "Vui lòng nhập thông tin để đăng nhập."
+                : "Điền thông tin bên dưới để bắt đầu cùng chúng tôi."}
+            </p>
+          </div>
+
+          {status.message && (
+            <div className={`auth__alert ${status.type}`}>{status.message}</div>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            {mode === "register" && (
+              <label>
+                Họ và tên
+                <input
+                  name="fullName"
+                  placeholder="Nguyễn Văn A"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+            )}
+
+            <label>
+              Số điện thoại
+              <input
+                name="Phone"
+                placeholder="you@example.com"
+                value={formData.Phone}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            <label>
+              Mật khẩu
+              <input
+                type="password"
+                name="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </label>
+
+            {mode === "register" && (
+              <label>
+                Xác nhận mật khẩu
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+            )}
+
+            {mode === "login" && (
+              <div className="auth__options">
+                <label className="auth__remember">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                  />
+                  Ghi nhớ tôi
+                </label>
+                <button type="button" className="auth__link">
+                  Quên mật khẩu?
+                </button>
+              </div>
+            )}
+
+            <button type="submit" className="auth__submit" disabled={loading}>
+              {loading
+                ? "Đang xử lý..."
+                : mode === "login"
+                ? "Đăng nhập"
+                : "Đăng ký"}
+            </button>
+          </form>
+
+          <div className="auth__divider">
+            <span>Hoặc tiếp tục với</span>
+          </div>
+
+          <div className="auth__social">
+            <button type="button" aria-label="Google sign in">
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google"
+              />
+            </button>
+            <button type="button" aria-label="Facebook sign in">
+              <img
+                src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg"
+
+                alt="Facebook"
+              />
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export default AuthPage;
