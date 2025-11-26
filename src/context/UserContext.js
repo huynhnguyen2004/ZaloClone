@@ -31,7 +31,7 @@ export const UserProvider = ({ children }) => {
     const navigate = useNavigate();
 
     const normalizeRequest = (data) => ({
-        id: data.id || data.requestId || `tmp_${Date.now()}`,
+        id: data.id ,
         senderId: data.senderId,
         receiverId: data.receiverId,
         senderName: data.senderName,

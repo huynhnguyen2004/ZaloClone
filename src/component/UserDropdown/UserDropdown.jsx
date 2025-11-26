@@ -108,7 +108,7 @@ function UserDropdown({ onProfileClick }) {
                                 )}
                             </div>
                             <div className="dropdown-user-details">
-                                <h4>{currentUser?.firstname} {currentUser?.lastName}</h4>
+                                <h4>{currentUser?.firstname} {currentUser?.lastname}</h4>
                                 <p>{currentUser?.phone}</p>
                                 <p className="user-status" style={{
                                     color: currentUser?.online ? '#31a24c' : '#ccc',
