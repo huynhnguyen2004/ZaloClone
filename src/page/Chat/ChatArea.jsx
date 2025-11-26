@@ -3,14 +3,50 @@ import {
     BiSearch, 
     BiMessageRounded,
     BiPlus,
-    BiDotsVerticalRounded
+    BiDotsVerticalRounded,
+    BiUserPlus,
+    BiCheck,
+    BiX
 } from "react-icons/bi";
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
+import { useUser } from "../../context/UserContext";
+import { acceptFriendRequest, declineFriendRequest } from "../../api/service/friend";
 import "./ChatArea.css";
 
 function ChatArea({ activeTab }) {
     const [searchTerm, setSearchTerm] = useState("");
+    const { friendRequests, removeFriendRequest } = useUser();
+
+    const formatRequestTime = (value) => {
+        if (!value) return "Vừa gửi";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Vừa gửi";
+        return date.toLocaleString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+        });
+    };
+
+    const handleAccept = async (req) => {
+        try {
+            await acceptFriendRequest(req.id);
+            removeFriendRequest(req.id);
+        } catch (err) {
+            console.error("Accept friend error", err);
+        }
+    };
+
+    const handleDecline = async (req) => {
+        try {
+            await declineFriendRequest(req.id);
+            removeFriendRequest(req.id);
+        } catch (err) {
+            console.error("Decline friend error", err);
+        }
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -61,6 +97,7 @@ function ChatArea({ activeTab }) {
                     </div>
                 );
 
+           
             case "contacts":
                 return (
                     <div className="chat-area-container">
@@ -71,7 +108,7 @@ function ChatArea({ activeTab }) {
                                     <BiPlus />
                                 </button>
                             </div>
-                            
+
                             <div className="chat-search">
                                 <BiSearch className="search-icon" />
                                 <input
@@ -85,6 +122,7 @@ function ChatArea({ activeTab }) {
                         </div>
 
                         <div className="chat-list-content">
+                           
                             <div className="empty-chat-state">
                                 <HiOutlineUsers className="empty-icon" />
                                 <h3>Danh bạ trống</h3>
@@ -94,6 +132,26 @@ function ChatArea({ activeTab }) {
                                     Thêm bạn bè
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                );
+
+            case "friendRequests":
+                return (
+                    <div className="chat-area-container">
+                        <div className="chat-list-header">
+                            <div className="header-title">
+                                <h2>Lời mời kết bạn</h2>
+                            </div>
+                        </div>
+
+                        <div className="chat-list-content">
+                            <FriendRequestSection
+                                friendRequests={friendRequests}
+                                handleAccept={handleAccept}
+                                handleDecline={handleDecline}
+                                formatRequestTime={formatRequestTime}
+                            />
                         </div>
                     </div>
                 );
@@ -151,5 +209,79 @@ function ChatArea({ activeTab }) {
         </div>
     );
 }
+
+const FriendRequestSection = ({
+    friendRequests,
+    handleAccept,
+    handleDecline,
+    formatRequestTime,
+}) => (
+    <div className="friend-requests-panel">
+        <div className="fr-panel-header">
+            <div>
+                <p className="fr-panel-label">Lời mời kết bạn</p>
+                <h3>Kết nối ngay với bạn mới</h3>
+            </div>
+            <span className="fr-panel-count">{friendRequests?.length || 0}</span>
+        </div>
+
+        {friendRequests && friendRequests.length > 0 ? (
+            <div className="friend-requests-grid">
+                {friendRequests.map((req) => {
+                    const displayName = req.senderName || req.phone || "Người dùng";
+                    const displayId = req.senderId || req.phone || req.id;
+                    return (
+                        <div key={req.id || displayId} className="friend-request-card">
+                            <div className="fr-card-meta">
+                                <div className="fr-card-avatar">
+                                    {req.senderAvatarUrl ? (
+                                        <img src={req.senderAvatarUrl} alt={displayName} />
+                                    ) : (
+                                        <span>{displayName.charAt(0)}</span>
+                                    )}
+                                </div>
+                                <div className="fr-card-info">
+                                    <div className="fr-card-name">{displayName}</div>
+                                    <div className="fr-card-note">
+                                        <BiUserPlus />
+                                        <span>{req.phone || "Lời mời mới"}</span>
+                                    </div>
+                                </div>
+                                <span className="fr-card-time">
+                                    {formatRequestTime(req.createdAt)}
+                                </span>
+                            </div>
+                            {req.note && <p className="fr-card-message">{req.note}</p>}
+                            <div className="fr-card-actions">
+                                <button
+                                    className="fr-btn fr-btn-ghost"
+                                    onClick={() => handleDecline(req)}
+                                >
+                                    <BiX />
+                                    Từ chối
+                                </button>
+                                <button
+                                    className="fr-btn fr-btn-primary"
+                                    onClick={() => handleAccept(req)}
+                                >
+                                    <BiCheck />
+                                    Chấp nhận
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        ) : (
+            <div className="empty-requests modern">
+                <BiUserPlus />
+                <div>
+                    <h4>Chưa có lời mời mới</h4>
+                    <p>Khi có người gửi lời mời, bạn sẽ thấy ở đây ngay.</p>
+                </div>
+            </div>
+        )}
+    </div>
+);
 
 export default ChatArea;

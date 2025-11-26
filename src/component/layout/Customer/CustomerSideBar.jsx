@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { 
     BiMessageRounded, 
-    BiUser, 
     BiCog,
     BiGroup,
-    BiBookmark
+    BiBookmark,
+    BiUserPlus,
+    BiCheck,
+    BiX
 } from "react-icons/bi";
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
@@ -13,12 +15,7 @@ import "./CustomerSideBar.css";
 
 function CustomerSideBar({ onTabChange }) {
     const [activeTab, setActiveTab] = useState("chats");
-    const { currentUser, fetchCurrentUser } = useUser();
-
-    useEffect(() => {
-        // Fetch user khi component mount
-        fetchCurrentUser();
-    }, [fetchCurrentUser]);
+    const { currentUser, friendRequests } = useUser();
 
     const handleTabClick = (tabName) => {
         setActiveTab(tabName);
@@ -56,6 +53,14 @@ function CustomerSideBar({ onTabChange }) {
         }
     ];
 
+    const toggleRequestPanel = () => {
+        const targetTab = "friendRequests";
+        setActiveTab(targetTab);
+        if (onTabChange) {
+            onTabChange(targetTab);
+        }
+    };
+
     return (
         <div className="sidebar-container">
             {/* User Avatar */}
@@ -91,6 +96,23 @@ function CustomerSideBar({ onTabChange }) {
                         </button>
                     );
                 })}
+
+                <button
+                    className={`nav-item request-trigger ${
+                        activeTab === "friendRequests" ? "active" : ""
+                    }`}
+                    onClick={toggleRequestPanel}
+                    title="Lời mời kết bạn"
+                >
+                    <div className="nav-icon-wrapper">
+                        <BiUserPlus className="nav-icon" />
+                        {friendRequests?.length > 0 && (
+                            <span className="notification-badge">
+                                {friendRequests.length > 99 ? "99+" : friendRequests.length}
+                            </span>
+                        )}
+                    </div>
+                </button>
             </div>
 
             {/* Settings */}

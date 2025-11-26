@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Outlet } from "react-router-dom";
 import CustomerHeader from "../../component/layout/Customer/CustomerHeader";
 import CustomerSideBar from "../../component/layout/Customer/CustomerSideBar";
 import ChatArea from "../../page/Chat/ChatArea";
@@ -60,19 +59,12 @@ export default function CustomerLayout() {
       <div className="layout-main">
         {/* Sidebar */}
         <div className="layout-sidebar">
-          <CustomerSideBar 
-            onTabChange={setActiveTab}
-          />
+          <CustomerSideBar onTabChange={setActiveTab} />
         </div>
 
-        {/* Chat Area */}
+        {/* Chat Area chiếm toàn bộ phần còn lại */}
         <div className="layout-chat-area">
           <ChatArea activeTab={activeTab} />
-        </div>
-
-        {/* Content Area for routes */}
-        <div className="layout-content">
-          <Outlet />
         </div>
       </div>
 

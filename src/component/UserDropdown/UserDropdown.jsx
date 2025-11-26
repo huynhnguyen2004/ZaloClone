@@ -13,15 +13,10 @@ import { useUser } from "../../context/UserContext";
 import "./UserDropdown.css";
 
 function UserDropdown({ onProfileClick }) {
-    const { currentUser, logout, fetchCurrentUser } = useUser();
+    const { currentUser, logout, friendRequests, removeFriendRequest } = useUser();
     const [isOpen, setIsOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const dropdownRef = useRef(null);
-
-    useEffect(() => {
-        // Fetch user khi component mount
-        fetchCurrentUser();
-    }, [fetchCurrentUser]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -88,6 +83,9 @@ function UserDropdown({ onProfileClick }) {
                         </div>
                     )}
                 </div>
+                {friendRequests?.length > 0 && (
+                    <span className="friend-request-badge">{friendRequests.length}</span>
+                )}
                 
                 {currentUser?.firstname && (
                     <span className="user-name-text">{currentUser.firstname}</span>
@@ -120,7 +118,45 @@ function UserDropdown({ onProfileClick }) {
                                 </p>
                             </div>
                         </div>
+
                     </div>
+
+                    {/* Friend requests (realtime) */}
+                    {friendRequests && friendRequests.length > 0 && (
+                        <div className="friend-requests-section">
+                            <h5>Lời mời kết bạn ({friendRequests.length})</h5>
+                            {friendRequests.map((req) => (
+                                <div key={req.id} className="friend-request-item">
+                                    <div className="fr-info">
+                                        <div className="fr-avatar">
+                                            {req.senderAvatarUrl ? (
+                                                <img src={req.senderAvatarUrl} alt="avatar" />
+                                            ) : (
+                                                <BiUser />
+                                            )}
+                                        </div>
+                                        <div className="fr-details">
+                                            <div className="fr-name">{req.senderName || req.firstname || req.phone}</div>
+                                        </div>
+                                    </div>
+                                    <div className="fr-actions">
+                                        <button
+                                            className="btn-accept"
+                                            onClick={() => removeFriendRequest(req.id)}
+                                        >
+                                            Chấp nhận
+                                        </button>
+                                        <button
+                                            className="btn-decline"
+                                            onClick={() => removeFriendRequest(req.id)}
+                                        >
+                                            Từ chối
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="dropdown-divider"></div>
 

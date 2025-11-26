@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { 
     BiSearch, 
     BiPhone, 
@@ -6,18 +6,10 @@ import {
     BiPlus
 } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
-import { useUser } from "../../../context/UserContext";
 import UserDropdown from "../../UserDropdown/UserDropdown";
 import "./CustomerHeader.css";
 
 function CustomerHeader({ onProfileClick }) {
-    const { fetchCurrentUser } = useUser();
-
-    useEffect(() => {
-        // Fetch user khi component mount
-        fetchCurrentUser();
-    }, [fetchCurrentUser]);
-
     return (
         <div className="header-container">
             <div className="header-left">

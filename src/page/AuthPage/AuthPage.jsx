@@ -3,6 +3,7 @@ import { login, register } from "../../api/service/authService";
 import "./AuthPage.css";
 import logo from "../../asset/logo.png";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../context/UserContext";
 
 const initialFormState = {
   firstname: "",
@@ -19,6 +20,7 @@ function AuthPage() {
   const [status, setStatus] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { fetchCurrentUser } = useUser();
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -45,6 +47,14 @@ function AuthPage() {
         if (token) {
           sessionStorage.setItem("token", token);
         }
+        if (token) {
+          try {
+            await fetchCurrentUser();
+          } catch (error) {
+            console.warn("Không thể fetch user sau login:", error);
+          }
+        }
+
         const user = data?.result?.user;
         if (user) {
           if (user.role === "Customer") {
@@ -53,6 +63,7 @@ function AuthPage() {
             navigate("/admin");
           }
         }
+
       } else {
         await register({
           phone: formData.phone,

@@ -1,89 +1,176 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getCurrentUser } from '../api/service/userService';
-import { logout as logoutApi } from '../api/service/authService';
-import { useNavigate } from 'react-router-dom';
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useCallback,
+    useRef,
+} from "react";
 
-// Tạo UserContext
+import { getCurrentUser } from "../api/service/userService";
+import { logout as logoutApi } from "../api/service/authService";
+import { useNavigate } from "react-router-dom";
+import { connectWebSocket, disconnectWebSocket } from "../api/websocket";
+
 const UserContext = createContext();
 
-// Custom hook để sử dụng UserContext
 export const useUser = () => {
-    const context = useContext(UserContext);
-    if (!context) {
-        throw new Error('useUser must be used within a UserProvider');
-    }
-    return context;
+    const ctx = useContext(UserContext);
+    if (!ctx) throw new Error("useUser must be used within UserProvider");
+    return ctx;
 };
 
-// UserProvider component
 export const UserProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [friendRequests, setFriendRequests] = useState([]);
     const [error, setError] = useState(null);
+
+    const connectedUserIdRef = useRef(null);
+    const wsInitializedRef = useRef(false); // chặn reconnect strict mode
     const navigate = useNavigate();
 
-    // Hàm lấy thông tin user từ session token
+    const normalizeRequest = (data) => ({
+        id: data.id || data.requestId || `tmp_${Date.now()}`,
+        senderId: data.senderId,
+        receiverId: data.receiverId,
+        senderName: data.senderName,
+        receiverName: data.receiverName,
+        createdAt: data.createdAt,
+        status: data.status,
+        // fallback fields for display
+        phone: data.phone ?? null,
+        senderAvatarUrl: data.senderAvatarUrl || data.avatarUrl || data.avatar,
+        raw: data,
+    });
+
+    // =============================================
+    // FETCH USER 1 LẦN
+    // =============================================
     const fetchCurrentUser = useCallback(async () => {
         try {
             setLoading(true);
-            setError(null);
-            
-            // Kiểm tra xem có token trong sessionStorage không
-            const token = sessionStorage.getItem('token');
+
+            const token = sessionStorage.getItem("token");
             if (!token) {
                 setCurrentUser(null);
                 setLoading(false);
                 return;
             }
 
-            // Gọi API để lấy thông tin user hiện tại
-            const userData = await getCurrentUser();
-            setCurrentUser(userData);
+            const res = await getCurrentUser();
+            console.log("🔎 fetchCurrentUser response:", res);
+
+            const payload = res?.result ?? res;
+            const normalizedUser = {
+                ...payload,
+                id:
+                    payload?.id ??
+                    payload?.userId ??
+                    payload?.user?.id ??
+                    payload?.phone ??
+                    null,
+            };
+
+            setCurrentUser(normalizedUser);
+            console.log("✅ currentUser set:", normalizedUser);
         } catch (err) {
-            console.error('Error fetching current user:', err);
-            setError(err.message || 'Không thể lấy thông tin người dùng');
-            
-            // Nếu token không hợp lệ, xóa token khỏi sessionStorage
-            if (err.response?.status === 401) {
-                sessionStorage.removeItem('token');
-                setCurrentUser(null);
-            }
+            console.error("fetchCurrentUser error:", err);
+            setCurrentUser(null);
         } finally {
             setLoading(false);
         }
     }, []);
 
+    // Run 1 lần khi app chạy
+    useEffect(() => {
+        fetchCurrentUser();
+    }, []);
+
+    // =============================================
+    // WEBSOCKET EFFECT — KHÔNG RECONNECT NHIỀU LẦN
+    // =============================================
+    useEffect(() => {
+        if (!currentUser?.id) {
+            // user vừa logout hoặc chưa có -> đảm bảo socket đóng lại
+            if (wsInitializedRef.current) {
+                disconnectWebSocket();
+                wsInitializedRef.current = false;
+                connectedUserIdRef.current = null;
+            }
+            return;
+        }
+
+        // tránh connect trùng user do StrictMode double invoke
+        if (
+            wsInitializedRef.current &&
+            connectedUserIdRef.current === currentUser.id
+        ) {
+            return;
+        }
+
+        console.log("🔌 Connecting WebSocket for user", currentUser.id);
+
+        const handleReceiveRequest = (raw) => {
+            const req = normalizeRequest(raw);
+            console.log("📩 WS Friend Request:", req);
+            setFriendRequests((prev) =>
+                prev.some((x) => x.id === req.id) ? prev : [req, ...prev]
+            );
+        };
+
+        const handleReceiveAccept = (data) => {
+            console.log("🎉 Friend accepted:", data);
+        };
+
+        wsInitializedRef.current = true;
+        connectedUserIdRef.current = currentUser.id;
+        connectWebSocket(currentUser.id, handleReceiveRequest, handleReceiveAccept);
+
+        return () => {
+            disconnectWebSocket();
+            wsInitializedRef.current = false;
+            connectedUserIdRef.current = null;
+        };
+    }, [currentUser?.id]);
+
+
+    // =============================================
+    // LOGOUT
+    // =============================================
     const logout = async () => {
         try {
-            if (currentUser?.id) {
-                await logoutApi(currentUser.id);   
-            }
+            if (currentUser?.id) await logoutApi(currentUser.id);
         } catch (err) {
             console.error("Logout API error:", err);
         }
 
         sessionStorage.removeItem("token");
         setCurrentUser(null);
-        setError(null);
+        setFriendRequests([]);
+
+        // Ngắt WebSocket
+        disconnectWebSocket();
+        connectedUserIdRef.current = null;
+        wsInitializedRef.current = false;
+
         navigate("/");
     };
 
-    // Effect để tự động lấy thông tin user khi component mount
-    useEffect(() => {
-        fetchCurrentUser();
-    }, [fetchCurrentUser]);
-
-    // Giá trị context
-    const contextValue = {
+    const value = {
         currentUser,
         loading,
         error,
+        friendRequests,
         fetchCurrentUser,
         logout,
+        removeFriendRequest: (reqId) =>
+            setFriendRequests((prev) => prev.filter((r) => r.id !== reqId)),
+        clearFriendRequests: () => setFriendRequests([]),
     };
 
     return (
-        <UserContext.Provider value={contextValue}>
+        <UserContext.Provider value={value}>
             {children}
         </UserContext.Provider>
     );
