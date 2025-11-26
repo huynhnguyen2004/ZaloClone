@@ -139,6 +139,12 @@ label {
   font-weight: 500;
 }
 
+.auth__name-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
 input {
   padding: 14px 16px;
   border-radius: 12px;

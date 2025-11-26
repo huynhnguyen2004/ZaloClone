@@ -1,0 +1,199 @@
+import React, { useState, useRef, useEffect } from "react";
+import { 
+    BiUser, 
+    BiCog, 
+    BiLogOut, 
+    BiShield,
+    BiMoon,
+    BiSun,
+    BiHelpCircle,
+    BiInfoCircle
+} from "react-icons/bi";
+import { useUser } from "../../context/UserContext";
+import "./UserDropdown.css";
+
+function UserDropdown({ onProfileClick }) {
+    const { currentUser, logout, fetchCurrentUser } = useUser();
+    const [isOpen, setIsOpen] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(false);
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        // Fetch user khi component mount
+        fetchCurrentUser();
+    }, [fetchCurrentUser]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    const handleToggle = () => {
+        setIsOpen(!isOpen);
+    };
+
+    const handleMenuClick = (action) => {
+        setIsOpen(false);
+        
+        switch (action) {
+            case 'profile':
+                 console.log('Open profile');
+                break;
+            case 'settings':
+                console.log('Open settings');
+                break;
+            case 'privacy':
+                console.log('Open privacy settings');
+                break;
+            case 'help':
+                console.log('Open help');
+                break;
+            case 'about':
+                console.log('Open about');
+                break;
+            case 'logout':
+                logout();
+                break;
+            case 'darkmode':
+                setIsDarkMode(!isDarkMode);
+                break;
+            default:
+                break;
+        }
+    };
+
+    return (
+        <div className="user-dropdown" ref={dropdownRef}>
+            {/* User Avatar Button */}
+            <button 
+                className="user-dropdown-trigger"
+                onClick={handleToggle}
+                title={currentUser?.firstname}
+            >
+                <div className="user-avatar-small">
+                    {currentUser?.avatarUrl ? (
+                        <img src={currentUser.avatarUrl} alt="Avatar" />
+                    ) : (
+                        <div className="default-avatar-small">
+                            {currentUser?.firstname?.charAt(0) || "U"}
+                        </div>
+                    )}
+                </div>
+                
+                {currentUser?.firstname && (
+                    <span className="user-name-text">{currentUser.firstname}</span>
+                )}
+            </button>
+
+            {/* Dropdown Menu */}
+            {isOpen && (
+                <div className="dropdown-menu">
+                    {/* User Info Section */}
+                    <div className="dropdown-header">
+                        <div className="dropdown-user-info">
+                            <div className="dropdown-avatar">
+                                {currentUser?.avatarUrl ? (
+                                    <img src={currentUser.avatarUrl} alt="Avatar" />
+                                ) : (
+                                    <div className="default-dropdown-avatar">
+                                        <BiUser />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="dropdown-user-details">
+                                <h4>{currentUser?.firstname} {currentUser?.lastName}</h4>
+                                <p>{currentUser?.phone}</p>
+                                <p className="user-status" style={{
+                                    color: currentUser?.online ? '#31a24c' : '#ccc',
+                                    fontSize: '12px'
+                                }}>
+                                    {currentUser?.online ? '● Đang hoạt động' : '● Ngoại tuyến'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="dropdown-divider"></div>
+
+                    {/* Menu Items */}
+                    <div className="dropdown-body">
+                        <button 
+                            className="dropdown-item"
+                            onClick={() => handleMenuClick('profile')}
+                        >
+                            <BiUser className="dropdown-icon" />
+                            <span>Thông tin cá nhân</span>
+                        </button>
+
+                        <button 
+                            className="dropdown-item"
+                            onClick={() => handleMenuClick('settings')}
+                        >
+                            <BiCog className="dropdown-icon" />
+                            <span>Cài đặt</span>
+                        </button>
+
+                        <button 
+                            className="dropdown-item"
+                            onClick={() => handleMenuClick('privacy')}
+                        >
+                            <BiShield className="dropdown-icon" />
+                            <span>Quyền riêng tư</span>
+                        </button>
+
+                        <button 
+                            className="dropdown-item"
+                            onClick={() => handleMenuClick('darkmode')}
+                        >
+                            {isDarkMode ? (
+                                <BiSun className="dropdown-icon" />
+                            ) : (
+                                <BiMoon className="dropdown-icon" />
+                            )}
+                            <span>{isDarkMode ? "Chế độ sáng" : "Chế độ tối"}</span>
+                        </button>
+
+                        <div className="dropdown-divider"></div>
+
+                        <button 
+                            className="dropdown-item"
+                            onClick={() => handleMenuClick('help')}
+                        >
+                            <BiHelpCircle className="dropdown-icon" />
+                            <span>Trợ giúp</span>
+                        </button>
+
+                        <button 
+                            className="dropdown-item"
+                            onClick={() => handleMenuClick('about')}
+                        >
+                            <BiInfoCircle className="dropdown-icon" />
+                            <span>Về Zalo</span>
+                        </button>
+
+                        <div className="dropdown-divider"></div>
+
+                        <button 
+                            className="dropdown-item logout-item"
+                            onClick={() => handleMenuClick('logout')}
+                        >
+                            <BiLogOut className="dropdown-icon" />
+                            <span>Đăng xuất</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default UserDropdown;

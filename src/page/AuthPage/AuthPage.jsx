@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { login, register } from "../api/service/authService";
-import "../style/AuthPage.css";
-import logo from "../asset/logo.png";
+import { login, register } from "../../api/service/authService";
+import "./AuthPage.css";
+import logo from "../../asset/logo.png";
 import { useNavigate } from "react-router-dom";
 
 const initialFormState = {
-  fullName: "",
-  Phone: "",
+  firstname: "",
+  lastName: "",
+  phone: "",
   password: "",
   confirmPassword: "",
 };
@@ -36,7 +37,7 @@ function AuthPage() {
       setLoading(true);
       if (mode === "login") {
         const { data } = await login({
-          identifier: formData.Phone,
+          phone: formData.phone,
           password: formData.password,
         });
 
@@ -54,9 +55,10 @@ function AuthPage() {
         }
       } else {
         await register({
-          fullName: formData.fullName,
-          identifier: formData.Phone,
+          phone: formData.phone,
           password: formData.password,
+          firstname: formData.firstname,
+          lastName: formData.lastName,
         });
         setStatus({
           type: "success",
@@ -124,24 +126,36 @@ function AuthPage() {
 
           <form onSubmit={handleSubmit}>
             {mode === "register" && (
-              <label>
-                Họ và tên
-                <input
-                  name="fullName"
-                  placeholder="Nguyễn Văn A"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </label>
+              <div className="auth__name-fields">
+                <label>
+                  Tên
+                  <input
+                    name="firstname"
+                    placeholder="Nguyễn"
+                    value={formData.firstname}
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+                <label>
+                  Họ
+                  <input
+                    name="lastName"
+                    placeholder="Văn A"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+              </div>
             )}
 
             <label>
               Số điện thoại
               <input
-                name="Phone"
-                placeholder="you@example.com"
-                value={formData.Phone}
+                name="phone"
+                placeholder="0912345678"
+                value={formData.phone}
                 onChange={handleChange}
                 required
               />
