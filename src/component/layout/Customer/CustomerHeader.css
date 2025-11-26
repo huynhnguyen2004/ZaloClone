@@ -258,6 +258,31 @@
     background-color: #f0f2f5;
     color: #1c1e21;
 }
+.search-add-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid #D0E5FF;
+    background: #F4F9FF;
+    color: #0068FF;
+    font-size: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.search-add-btn:hover {
+    background: #0068FF;
+    color: #fff;
+    border-color: #0068FF;
+    box-shadow: 0 3px 8px rgba(0, 108, 255, 0.3);
+    transform: scale(1.1);
+}
+
 
 /* Responsive */
 @media (max-width: 768px) {

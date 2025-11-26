@@ -11,12 +11,13 @@ import {
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
 import { useUser } from "../../context/UserContext";
-import { acceptFriendRequest, declineFriendRequest } from "../../api/service/friend";
+import { acceptFriendRequest, declineFriendRequest, sendFriendRequest } from "../../api/service/friend";
+import { sendSocketData } from "../../api/websocket";
 import "./ChatArea.css";
 
 function ChatArea({ activeTab }) {
     const [searchTerm, setSearchTerm] = useState("");
-    const { friendRequests, removeFriendRequest } = useUser();
+    const { friendRequests, removeFriendRequest, currentUser } = useUser();
 
     const formatRequestTime = (value) => {
         if (!value) return "Vừa gửi";
@@ -32,12 +33,24 @@ function ChatArea({ activeTab }) {
 
     const handleAccept = async (req) => {
         try {
-            await acceptFriendRequest(req.id);
+            const res = await acceptFriendRequest(req.id);
+
+            // Use server response payload if available so server-controlled data is sent
+            const payload = (res && res.data) ? res.data : { id: req.id };
+
+            try {
+                sendSocketData('/app/friend/accept', payload);
+            } catch (sockErr) {
+                console.warn('WebSocket publish failed', sockErr);
+            }
+
             removeFriendRequest(req.id);
         } catch (err) {
             console.error("Accept friend error", err);
         }
     };
+
+
 
     const handleDecline = async (req) => {
         try {
@@ -104,7 +117,7 @@ function ChatArea({ activeTab }) {
                         <div className="chat-list-header">
                             <div className="header-title">
                                 <h2>Danh bạ</h2>
-                                <button className="new-chat-btn" title="Thêm bạn bè">
+                                <button className="new-chat-btn" title="Thêm bạn bè" >
                                     <BiPlus />
                                 </button>
                             </div>
@@ -127,7 +140,7 @@ function ChatArea({ activeTab }) {
                                 <HiOutlineUsers className="empty-icon" />
                                 <h3>Danh bạ trống</h3>
                                 <p>Thêm bạn bè để bắt đầu trò chuyện</p>
-                                <button className="start-chat-btn">
+                                <button className="start-chat-btn" >
                                     <BiPlus />
                                     Thêm bạn bè
                                 </button>

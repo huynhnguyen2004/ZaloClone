@@ -6,9 +6,9 @@ export const sendFriendRequest = async (senderId, receiverId) => {
 };
 
 // Nếu BE expects requestId in body for accept
-export const acceptFriendRequest = async (requestId) => {
+export const acceptFriendRequest = async (id) => {
   // adjust if backend route is /api/friend/accept/{id}
-  return api.post("/api/friend/accept", { requestId });
+  return api.post("/api/friend/accepted", { id});
   // OR if backend uses path var:
   // return api.post(`/api/friend/accept/${requestId}`);
 };

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { 
-    BiSearch, 
-    BiPhone, 
-    BiVideo, 
-    BiPlus
-} from "react-icons/bi";
+import { BiSearch, BiPlus, BiUserPlus } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
-import UserDropdown from "../../UserDropdown/UserDropdown";
+import { useUser } from "../../../context/UserContext";
+import { sendFriendRequest } from "../../../api/service/friend";
+import { sendSocketData } from "../../../api/websocket";
 import { search as searchUsers } from "../../../api/service/userService";
+import UserDropdown from "../../UserDropdown/UserDropdown";
 import "./CustomerHeader.css";
 
 function CustomerHeader({ onProfileClick }) {
@@ -15,6 +13,8 @@ function CustomerHeader({ onProfileClick }) {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
+    const { currentUser } = useUser();
+    const [sendingIds, setSendingIds] = useState([]);
 
     useEffect(() => {
         if (!query || query.trim().length < 2) {
@@ -41,85 +41,107 @@ function CustomerHeader({ onProfileClick }) {
         return () => clearTimeout(handle);
     }, [query]);
 
+    const handleAddFriend = async (user) => {
+        if (!currentUser?.id) return;
+
+       
+
+        const receiverId = user.id;
+
+        if (sendingIds.includes(receiverId)) return;
+
+        setSendingIds((prev) => [...prev, receiverId]);
+
+        try {
+            const res = await sendFriendRequest(currentUser.id, receiverId);
+            const payload = res?.data || {
+                senderId: currentUser.id,
+                receiverId,
+            };
+
+            try {
+                sendSocketData("/app/friend/send", payload);
+            } catch (e) {
+                console.warn("WS publish failed", e);
+            }
+
+            // 🔥 Đóng dropdown sau khi gửi
+            setOpen(false);
+            setQuery("");
+
+        } catch (err) {
+            console.error("Send friend error", err);
+        } finally {
+            setSendingIds((prev) =>
+                prev.filter((i) => i !== receiverId)
+            );
+        }
+    };
+
     return (
         <div className="header-container">
+            
+            {/* Logo */}
             <div className="header-left">
-                <div className="logo-section">
-                    <div className="zalo-logo">
-                        <RiMessage3Line className="logo-icon" />
-                        <span className="logo-text">Zalo</span>
-                    </div>
+                <div className="zalo-logo">
+                    <RiMessage3Line className="logo-icon" />
+                    <span className="logo-text">Zalo</span>
                 </div>
             </div>
-            
+
+            {/* Search */}
             <div className="header-center">
                 <div className="search-container">
                     <BiSearch className="search-icon" />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="Tìm kiếm tin nhắn, liên hệ"
-                        className="search-input"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
+                        className="search-input"
                     />
 
                     {open && (
                         <div className="search-dropdown">
                             {loading ? (
-                                <div className="search-dropdown-item search-loading">
-                                    Đang tìm kiếm...
-                                </div>
+                                <div className="search-loading">Đang tìm kiếm...</div>
                             ) : results.length > 0 ? (
                                 results.map((user) => (
-                                    <div
-                                        key={user.id || user.phone}
-                                        className="search-dropdown-item"
-                                    >
-                                        <div className="search-avatar">
-                                            {user.avatarUrl ? (
-                                                <img src={user.avatarUrl} alt={user.firstname || user.phone} />
-                                            ) : (
-                                                <span>
-                                                    {(user.firstname || user.phone || "U").charAt(0)}
-                                                </span>
-                                            )}
-                                        </div>
+                                    <div key={user.id} className="search-dropdown-item">
+                                      
+
                                         <div className="search-info">
                                             <div className="search-name">
-                                                {user.firstname && user.lastName
-                                                    ? `${user.firstname} ${user.lastName}`
-                                                    : user.senderName ||
-                                                      user.phone ||
-                                                      "Người dùng"}
+                                                {user.firstname} {user.lastname}
                                             </div>
-                                            {user.phone && (
-                                                <div className="search-phone">{user.phone}</div>
-                                            )}
+                                            <div className="search-phone">{user.phone}</div>
+                                        </div>
+
+                                        <div className="search-action">
+                                            <button
+                                                className="search-add-btn"
+                                                onClick={() => handleAddFriend(user)}
+                                                disabled={sendingIds.includes(user.id)}
+                                            >
+                                                <BiUserPlus />
+                                            </button>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="search-dropdown-item search-empty">
-                                    Không tìm thấy kết quả
-                                </div>
+                                <div className="search-empty">Không tìm thấy kết quả</div>
                             )}
                         </div>
                     )}
                 </div>
             </div>
-            
+
+            {/* User */}
             <div className="header-right">
-                <div className="header-actions">
-                    
-                    
-                    <button className="action-btn" title="Thêm">
-                        <BiPlus />
-                    </button>
-                </div>
-                
-                <div className="user-info">
-                    <UserDropdown onProfileClick={onProfileClick} />
-                </div>
+                <button className="action-btn">
+                    <BiPlus />
+                </button>
+                <UserDropdown onProfileClick={onProfileClick} />
             </div>
         </div>
     );

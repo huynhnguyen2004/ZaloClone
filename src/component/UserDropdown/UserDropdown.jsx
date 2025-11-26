@@ -10,6 +10,8 @@ import {
     BiInfoCircle
 } from "react-icons/bi";
 import { useUser } from "../../context/UserContext";
+import { acceptFriendRequest, declineFriendRequest } from "../../api/service/friend";
+import { sendSocketData } from "../../api/websocket";
 import "./UserDropdown.css";
 
 function UserDropdown({ onProfileClick }) {
@@ -63,6 +65,30 @@ function UserDropdown({ onProfileClick }) {
                 break;
             default:
                 break;
+        }
+    };
+
+    const handleAccept = async (req) => {
+        try {
+            const res = await acceptFriendRequest(req.id);
+            const payload = (res && res.data) ? res.data : { id: req.id };
+            try {
+                sendSocketData('/app/friend/accept', payload);
+            } catch (sockErr) {
+                console.warn('WebSocket publish failed', sockErr);
+            }
+            removeFriendRequest(req.id);
+        } catch (err) {
+            console.error('Accept friend error', err);
+        }
+    };
+
+    const handleDecline = async (req) => {
+        try {
+            await declineFriendRequest(req.id);
+            removeFriendRequest(req.id);
+        } catch (err) {
+            console.error('Decline friend error', err);
         }
     };
 
@@ -142,13 +168,13 @@ function UserDropdown({ onProfileClick }) {
                                     <div className="fr-actions">
                                         <button
                                             className="btn-accept"
-                                            onClick={() => removeFriendRequest(req.id)}
+                                            onClick={() => handleAccept(req)}
                                         >
                                             Chấp nhận
                                         </button>
                                         <button
                                             className="btn-decline"
-                                            onClick={() => removeFriendRequest(req.id)}
+                                            onClick={() => handleDecline(req)}
                                         >
                                             Từ chối
                                         </button>
