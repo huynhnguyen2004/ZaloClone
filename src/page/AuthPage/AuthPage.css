@@ -255,13 +255,131 @@ input:focus {
   height: 24px;
 }
 
-@media (max-width: 768px) {
+/* ============================
+    RESPONSIVE — TABLET (≤ 1024px)
+   ============================ */
+@media (max-width: 1024px) {
+  .auth__card {
+    grid-template-columns: 1fr;
+    border-radius: 24px;
+  }
+
   .auth__hero {
-    padding: 32px;
+    padding: 40px;
+    text-align: center;
   }
 
   .auth__form {
-    padding: 32px;
+    padding: 40px;
+  }
+
+  .auth__hero img {
+    max-width: 260px;
+  }
+
+  .auth__hero h1 {
+    font-size: 28px;
   }
 }
+
+
+/* ============================
+    RESPONSIVE — MOBILE LARGE (≤ 768px)
+   ============================ */
+@media (max-width: 768px) {
+  .auth {
+    padding: 16px;
+  }
+
+  .auth__card {
+    border-radius: 20px;
+    grid-template-columns: 1fr;
+  }
+
+  .auth__hero {
+    padding: 32px 24px;
+  }
+
+  .auth__form {
+    padding: 32px 24px;
+  }
+
+  .auth__hero h1 {
+    font-size: 24px;
+  }
+
+  .auth__hero p {
+    font-size: 14px;
+  }
+
+  .auth__name-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .auth__tab button {
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  .auth__submit {
+    padding: 14px;
+    font-size: 15px;
+    border-radius: 14px;
+  }
+
+  .auth__divider {
+    gap: 12px;
+    font-size: 13px;
+  }
+
+  .auth__social {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ============================
+    RESPONSIVE — MOBILE SMALL (≤ 480px)
+   ============================ */
+@media (max-width: 480px) {
+  .auth__hero img {
+    max-width: 200px;
+  }
+
+  .auth__hero {
+    padding: 24px 16px;
+  }
+
+  .auth__form {
+    padding: 24px 16px;
+  }
+
+  label {
+    font-size: 13px;
+  }
+
+  input {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .auth__submit {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .auth__social button {
+    padding: 10px;
+  }
+
+  .auth__badge {
+    width: 60px;
+    height: 60px;
+  }
+
+  .auth__badge-icon {
+    font-size: 26px;
+  }
+}
+
 

@@ -1,0 +1,119 @@
+/* Global responsive helpers to improve mobile display */
+:root {
+  --content-max-width: 1200px;
+}
+
+html, body, #root {
+  height: 100%;
+  -webkit-text-size-adjust: 100%; /* Prevent font autosizing on iOS */
+}
+
+/* Make images and media scale nicely */
+img, svg, video, picture {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent horizontal overflow */
+body {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Improve touch targets */
+button, a, .action-btn, .nav-item, .filter-btn, .fr-btn, .new-chat-btn, .modal-close-btn {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Ensure form controls are readable on mobile (avoid iOS zoom) */
+input, textarea, select, .search-input {
+  font-size: 16px;
+}
+
+/* Utility: full-width container constrained to a max width */
+.container {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+/* Make cards and panels stack nicely on small screens */
+.card, .panel, .friend-request-card, .empty-state, .chat-welcome {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Make scrollable areas behave on mobile */
+.sidebar-content, .modal-body, .chat-list-content, .popover-list {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Provide larger hit areas for small icon buttons on phones */
+@media (max-width: 768px) {
+  .action-btn, .nav-item, .dropdown-btn, .search-add-btn, .request-btn, .popover-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Reduce horizontal paddings to keep content visible */
+  .chat-list-content, .chat-welcome, .friend-requests-panel {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Ensure header elements wrap and don't overflow */
+  .header-left, .header-center, .header-right {
+    min-width: 0;
+  }
+}
+
+/* Small phones layout tweaks */
+@media (max-width: 480px) {
+  :root {
+    --content-max-width: 100%;
+  }
+
+  /* Sidebar becomes off-canvas by default; layout CSS manages .open state */
+  .layout-sidebar {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* Make modals use nearly full-screen for easier interaction */
+  .modal-container {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 12px !important;
+    margin: 0 auto;
+    height: auto;
+    max-height: 98vh;
+  }
+
+  /* Slightly larger default body font-size to improve readability */
+  body {
+    font-size: 15px;
+  }
+
+  /* Compact header spacings */
+  .header-container, .layout-header {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Avoid input zoom: keep search inputs at comfortable height */
+  .search-input {
+    height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}
+
+/* Optional helper classes */
+.hide-on-mobile { display: none !important; }
+.show-on-mobile { display: block !important; }
+
+/* End responsive helpers */

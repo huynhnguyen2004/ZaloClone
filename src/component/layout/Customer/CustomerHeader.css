@@ -291,11 +291,14 @@
     }
     
     .header-center {
-        margin: 0 12px;
+        margin: 0 8px;
+        max-width: 300px;
     }
     
     .search-input {
         font-size: 16px; /* Prevent zoom on iOS */
+        height: 40px;
+        padding: 8px 16px 8px 36px;
     }
     
     .logo-text {
@@ -304,5 +307,57 @@
     
     .header-actions {
         gap: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-container {
+        padding: 0 8px;
+        height: 52px;
+    }
+    
+    .header-left {
+        min-width: auto;
+    }
+    
+    .header-center {
+        margin: 0 4px;
+        max-width: 100%;
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .search-container {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .search-input {
+        height: 36px;
+        font-size: 16px;
+        padding: 8px 16px 8px 36px;
+        border-radius: 18px;
+    }
+    
+    .search-dropdown {
+        max-width: 90vw;
+        left: auto;
+        right: -8px;
+    }
+    
+    .header-right {
+        min-width: auto;
+        gap: 8px;
+    }
+    
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+    
+    .user-avatar {
+        width: 28px;
+        height: 28px;
     }
 }

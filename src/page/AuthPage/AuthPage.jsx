@@ -7,7 +7,7 @@ import { useUser } from "../../context/UserContext";
 
 const initialFormState = {
   firstname: "",
-  lastName: "",
+  lastname: "",
   phone: "",
   password: "",
   confirmPassword: "",
@@ -69,7 +69,7 @@ function AuthPage() {
           phone: formData.phone,
           password: formData.password,
           firstname: formData.firstname,
-          lastName: formData.lastName,
+          lastname: formData.lastname,
         });
         setStatus({
           type: "success",
@@ -151,9 +151,9 @@ function AuthPage() {
                 <label>
                   Họ
                   <input
-                    name="lastName"
+                    name="lastname"
                     placeholder="Văn A"
-                    value={formData.lastName}
+                    value={formData.lastname}
                     onChange={handleChange}
                     required
                   />

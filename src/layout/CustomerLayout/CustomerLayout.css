@@ -125,27 +125,31 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    /* Keep sidebar visible on small screens: fixed at left, content shifted */
     .layout-main {
         flex-direction: column;
     }
-    
+
     .layout-sidebar {
         position: fixed;
-        top: 60px;
-        left: -350px;
-        height: calc(100vh - 60px);
-        z-index: 999;
-        transition: left 0.3s ease;
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    .layout-sidebar.open {
+        top: 56px; /* below header */
         left: 0;
+        height: calc(100vh - 56px);
+        z-index: 999;
+        width: 72px;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+        background-color: #ffffff;
     }
-    
+
+    /* Ensure main content does not sit under the sidebar */
+    .layout-chat-area {
+        margin-left: 72px; /* leave room for visible sidebar */
+    }
+
+    /* Keep layout-content full width but account for sidebar spacing */
     .layout-content {
-        width: 100%;
-        margin-left: 0;
+        width: calc(100% - 72px);
+        margin-left: 72px;
     }
 }
 
