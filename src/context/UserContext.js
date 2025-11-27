@@ -11,6 +11,7 @@ import { getCurrentUser } from "../api/service/userService";
 import { logout as logoutApi } from "../api/service/authService";
 import { useNavigate } from "react-router-dom";
 import { connectWebSocket, disconnectWebSocket } from "../api/websocket";
+import { getAllFriendSend } from "../api/service/friend";
 
 const UserContext = createContext();
 
@@ -27,7 +28,7 @@ export const UserProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const connectedUserIdRef = useRef(null);
-  const wsInitializedRef = useRef(false); // chặn reconnect strict mode
+  const wsInitializedRef = useRef(false);
   const navigate = useNavigate();
 
   const normalizeRequest = (data) => ({
@@ -38,15 +39,24 @@ export const UserProvider = ({ children }) => {
     receiverName: data.receiverName,
     createdAt: data.createdAt,
     status: data.status,
-    // fallback fields for display
     phone: data.phone ?? null,
     senderAvatarUrl: data.senderAvatarUrl || data.avatarUrl || data.avatar,
     raw: data,
   });
 
-  // =============================================
-  // FETCH USER 1 LẦN
-  // =============================================
+  /** FETCH FRIEND REQUESTS */
+  const fetchFriendRequests = useCallback(async (userId) => {
+    try {
+      const res = await getAllFriendSend({ id: userId });
+     const list = res.data.result ?? []; 
+    setFriendRequests(list); // OK
+      console.log("📌 Loaded friend requests:", list);
+    } catch (err) {
+      console.error("❌ Fetch friend requests error:", err);
+    }
+  }, []);
+
+  /** FETCH CURRENT USER */
   const fetchCurrentUser = useCallback(async () => {
     try {
       setLoading(true);
@@ -59,9 +69,8 @@ export const UserProvider = ({ children }) => {
       }
 
       const res = await getCurrentUser();
-      console.log("🔎 fetchCurrentUser response:", res);
-
       const payload = res?.result ?? res;
+
       const normalizedUser = {
         ...payload,
         id:
@@ -73,7 +82,7 @@ export const UserProvider = ({ children }) => {
       };
 
       setCurrentUser(normalizedUser);
-      console.log("✅ currentUser set:", normalizedUser);
+      console.log("✅ CurrentUser:", normalizedUser);
     } catch (err) {
       console.error("fetchCurrentUser error:", err);
       setCurrentUser(null);
@@ -82,17 +91,21 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
-  // Run 1 lần khi app chạy
+  /** Chạy 1 lần khi app load */
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // =============================================
-  // WEBSOCKET EFFECT — KHÔNG RECONNECT NHIỀU LẦN
-  // =============================================
+  /** Khi currentUser đã có → fetch friend requests */
+  useEffect(() => {
+    if (currentUser?.id) {
+      fetchFriendRequests(currentUser.id);
+    }
+  }, [currentUser, fetchFriendRequests]);
+
+  /** WEBSOCKET */
   useEffect(() => {
     if (!currentUser?.id) {
-      // user vừa logout hoặc chưa có -> đảm bảo socket đóng lại
       if (wsInitializedRef.current) {
         disconnectWebSocket();
         wsInitializedRef.current = false;
@@ -101,7 +114,6 @@ export const UserProvider = ({ children }) => {
       return;
     }
 
-    // tránh connect trùng user do StrictMode double invoke
     if (
       wsInitializedRef.current &&
       connectedUserIdRef.current === currentUser.id
@@ -120,10 +132,7 @@ export const UserProvider = ({ children }) => {
     };
 
     const handleReceiveAccept = (data) => {
-      console.log("🎉 Friend accepted:", data);
-
       const { senderId, receiverId } = data;
-
       setFriendRequests((prev) =>
         prev.filter(
           (req) => !(req.senderId === senderId && req.receiverId === receiverId)
@@ -142,21 +151,16 @@ export const UserProvider = ({ children }) => {
     };
   }, [currentUser?.id]);
 
-  // =============================================
-  // LOGOUT
-  // =============================================
+  /** LOGOUT */
   const logout = async () => {
     try {
       if (currentUser?.id) await logoutApi(currentUser.id);
-    } catch (err) {
-      console.error("Logout API error:", err);
-    }
+    } catch {}
 
     sessionStorage.removeItem("token");
     setCurrentUser(null);
     setFriendRequests([]);
 
-    // Ngắt WebSocket
     disconnectWebSocket();
     connectedUserIdRef.current = null;
     wsInitializedRef.current = false;
