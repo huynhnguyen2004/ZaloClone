@@ -15,6 +15,9 @@ export const acceptFriendRequest = async (id) => {
 export const getAllFriendSend=async(params)=>{
   return api.get("/api/friendrequest",{params})
 }
+export const getAllFriend=async(params)=>{
+  return api.get("/api/friends",{params})
+}
 
 export const declineFriendRequest = async (requestId) => {
   return api.post("/api/friendrequest/decline", { requestId });

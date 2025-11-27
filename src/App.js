@@ -11,7 +11,6 @@ function App() {
       <UserProvider>
         <Routes>
           <Route path="/" element={<AuthPage />} />
-
           <Route path="/home" element={<CustomerLayout />} />
 
           <Route path="/admin" element={<AdminLayout />}></Route>

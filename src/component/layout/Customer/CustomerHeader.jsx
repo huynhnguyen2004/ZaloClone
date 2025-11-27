@@ -85,7 +85,7 @@ function CustomerHeader({ onProfileClick }) {
             <div className="header-left">
                 <div className="zalo-logo">
                     <RiMessage3Line className="logo-icon" />
-                    <span className="logo-text">Zalo</span>
+                    <span className="logo-text">Chat</span>
                 </div>
             </div>
 

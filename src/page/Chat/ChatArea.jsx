@@ -3,45 +3,35 @@ import {
   BiSearch,
   BiMessageRounded,
   BiPlus,
-  BiDotsVerticalRounded,
   BiUserPlus,
   BiCheck,
   BiX,
 } from "react-icons/bi";
-import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
 import { useUser } from "../../context/UserContext";
+
 import {
   acceptFriendRequest,
   declineFriendRequest,
-  sendFriendRequest,
-  getAllFriendSend,
 } from "../../api/service/friend";
+
 import { sendSocketData } from "../../api/websocket";
+
 import "./ChatArea.css";
+import FriendList from "../../component/FriendList/FriendList";
 
 function ChatArea({ activeTab }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const { friendRequests, removeFriendRequest, currentUser } = useUser();
-  const [requestList, setRequestList] = useState([]);
-  useEffect(() => {
-    if (activeTab === "friendRequests" && currentUser?.id) {
-      fetchFriendRequests();
-    }
-  }, [activeTab, currentUser]);
 
-  const fetchFriendRequests = async () => {
-    try {
-      const res = await getAllFriendSend({ id: currentUser.id });
-      setRequestList(res.data.result); // <-- lấy từ ApiResponse
-    } catch (err) {
-      console.error("Lỗi lấy danh sách lời mời:", err);
-    }
-  };
+  // 🔥 Dữ liệu realtime lấy từ UserContext
+  const { friendRequests, removeFriendRequest, currentUser } = useUser();
+
+  /** Format thời gian */
   const formatRequestTime = (value) => {
     if (!value) return "Vừa gửi";
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Vừa gửi";
+    if (isNaN(date.getTime())) return "Vừa gửi";
+
     return date.toLocaleString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
@@ -50,52 +40,55 @@ function ChatArea({ activeTab }) {
     });
   };
 
+  /** Bấm Chấp nhận */
   const handleAccept = async (req) => {
     try {
       const res = await acceptFriendRequest(req.id);
 
-      // Use server response payload if available so server-controlled data is sent
-      const payload = res && res.data ? res.data : { id: req.id };
+      const payload = res?.data || {
+        id: req.id,
+        senderId: req.senderId,
+        receiverId: req.receiverId,
+      };
 
       try {
         sendSocketData("/app/friend/accept", payload);
-      } catch (sockErr) {
-        console.warn("WebSocket publish failed", sockErr);
+      } catch (e) {
+        console.warn("WebSocket error", e);
       }
 
       removeFriendRequest(req.id);
     } catch (err) {
-      console.error("Accept friend error", err);
+      console.error("Accept error:", err);
     }
   };
 
+  /** Bấm Từ chối */
   const handleDecline = async (req) => {
     try {
       await declineFriendRequest(req.id);
       removeFriendRequest(req.id);
     } catch (err) {
-      console.error("Decline friend error", err);
+      console.error("Decline error:", err);
     }
   };
 
+  // -------------------------------------------------------------------
+  // ---------------------- RENDER UI THEO TAB -------------------------
+  // -------------------------------------------------------------------
   const renderContent = () => {
     switch (activeTab) {
       case "chats":
         return (
           <div className="chat-area-container">
-            {/* Chat List Header */}
             <div className="chat-list-header">
               <div className="header-title">
                 <h2>Tin nhắn</h2>
-                <button
-                  className="new-chat-btn"
-                  title="Tạo cuộc trò chuyện mới"
-                >
+                <button className="new-chat-btn">
                   <BiPlus />
                 </button>
               </div>
 
-              {/* Search */}
               <div className="chat-search">
                 <BiSearch className="search-icon" />
                 <input
@@ -107,7 +100,6 @@ function ChatArea({ activeTab }) {
                 />
               </div>
 
-              {/* Filter tabs */}
               <div className="chat-filters">
                 <button className="filter-tab active">Tất cả</button>
                 <button className="filter-tab">Chưa đọc</button>
@@ -115,7 +107,6 @@ function ChatArea({ activeTab }) {
               </div>
             </div>
 
-            {/* Chat List */}
             <div className="chat-list-content">
               <div className="empty-chat-state">
                 <BiMessageRounded className="empty-icon" />
@@ -136,16 +127,13 @@ function ChatArea({ activeTab }) {
             <div className="chat-list-header">
               <div className="header-title">
                 <h2>Danh bạ</h2>
-                <button className="new-chat-btn" title="Thêm bạn bè">
-                  <BiPlus />
-                </button>
               </div>
 
               <div className="chat-search">
                 <BiSearch className="search-icon" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm liên hệ"
+                  placeholder="Tìm kiếm bạn bè"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="search-input"
@@ -153,17 +141,7 @@ function ChatArea({ activeTab }) {
               </div>
             </div>
 
-            <div className="chat-list-content">
-              <div className="empty-chat-state">
-                <HiOutlineUsers className="empty-icon" />
-                <h3>Danh bạ trống</h3>
-                <p>Thêm bạn bè để bắt đầu trò chuyện</p>
-                <button className="start-chat-btn">
-                  <BiPlus />
-                  Thêm bạn bè
-                </button>
-              </div>
-            </div>
+            <FriendList />
           </div>
         );
 
@@ -193,7 +171,7 @@ function ChatArea({ activeTab }) {
             <div className="chat-list-header">
               <div className="header-title">
                 <h2>Nhật ký</h2>
-                <button className="new-chat-btn" title="Tạo bài viết">
+                <button className="new-chat-btn">
                   <BiPlus />
                 </button>
               </div>
@@ -237,8 +215,11 @@ function ChatArea({ activeTab }) {
   return <div className="chat-area">{renderContent()}</div>;
 }
 
+// -------------------------------------------------------------------
+// --------------------- COMPONENT LỜI MỜI KẾT BẠN --------------------
+// -------------------------------------------------------------------
 const FriendRequestSection = ({
-friendRequests,
+  friendRequests,
   handleAccept,
   handleDecline,
   formatRequestTime,
@@ -252,11 +233,12 @@ friendRequests,
       <span className="fr-panel-count">{friendRequests?.length || 0}</span>
     </div>
 
-    {friendRequests && friendRequests.length > 0 ? (
+    {friendRequests?.length > 0 ? (
       <div className="friend-requests-grid">
         {friendRequests.map((req) => {
           const displayName = req.senderName || req.phone || "Người dùng";
           const displayId = req.senderId || req.phone || req.id;
+
           return (
             <div key={req.id || displayId} className="friend-request-card">
               <div className="fr-card-meta">
@@ -267,6 +249,7 @@ friendRequests,
                     <span>{displayName.charAt(0)}</span>
                   )}
                 </div>
+
                 <div className="fr-card-info">
                   <div className="fr-card-name">{displayName}</div>
                   <div className="fr-card-note">
@@ -274,11 +257,12 @@ friendRequests,
                     <span>{req.phone || "Lời mời mới"}</span>
                   </div>
                 </div>
+
                 <span className="fr-card-time">
                   {formatRequestTime(req.createdAt)}
                 </span>
               </div>
-              {req.note && <p className="fr-card-message">{req.note}</p>}
+
               <div className="fr-card-actions">
                 <button
                   className="fr-btn fr-btn-ghost"
@@ -287,6 +271,7 @@ friendRequests,
                   <BiX />
                   Từ chối
                 </button>
+
                 <button
                   className="fr-btn fr-btn-primary"
                   onClick={() => handleAccept(req)}
