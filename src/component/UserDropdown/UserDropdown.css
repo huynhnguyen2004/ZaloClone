@@ -1,3 +1,4 @@
+/* Gốc giữ nguyên */
 .user-dropdown {
     position: relative;
     display: inline-block;
@@ -57,81 +58,8 @@
     max-width: 120px;
 }
 
-.friend-request-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: #ef4444;
-    color: white;
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-}
 
-.friend-requests-section {
-    padding: 8px 12px;
-}
-
-.friend-requests-section h5 {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    color: #111827;
-}
-
-.friend-request-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px dashed #eef2f7;
-}
-
-.fr-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.fr-avatar img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.fr-name {
-    font-size: 13px;
-    color: #111827;
-}
-
-.fr-actions button {
-    margin-left: 6px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.btn-accept {
-    background: #10b981;
-    color: white;
-}
-
-.btn-decline {
-    background: #ef4444;
-    color: white;
-}
-
-.verified-badge {
-    color: #0084ff;
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
-/* Dropdown Menu */
+/* DROPDOWN */
 .dropdown-menu {
     position: absolute;
     top: 100%;
@@ -144,7 +72,7 @@
     z-index: 1000;
     margin-top: 8px;
     overflow: hidden;
-    animation: dropdownFadeIn 0.2s ease-out;
+    animation: dropdownFadeIn 0.22s ease-out;
 }
 
 @keyframes dropdownFadeIn {
@@ -265,29 +193,82 @@
     color: #dc2626;
 }
 
-/* Responsive */
+
+/* ===========================
+        RESPONSIVE
+   =========================== */
+
+/* Tablet & below */
 @media (max-width: 768px) {
+
+    /* Thu nhỏ avatar */
+    .user-avatar-small {
+        width: 28px;
+        height: 28px;
+    }
+
+    /* Ẩn tên user để tiết kiệm không gian */
     .user-name-text {
         display: none;
     }
-    
+
+    /* Dropdown thu hẹp lại và đẩy sang phải nhẹ */
     .dropdown-menu {
-        width: 260px;
+        width: 250px;
         right: -20px;
     }
-    
+
     .dropdown-header {
         padding: 12px;
     }
-    
+
     .dropdown-item {
         padding: 10px 12px;
     }
 }
 
+/* Mobile nhỏ */
 @media (max-width: 480px) {
+
     .dropdown-menu {
-        width: 240px;
-        right: -40px;
+        width: 230px;
+        right: -40px; /* đẩy thêm để không bị lệch khỏi màn hình */
+    }
+
+    .dropdown-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .dropdown-user-details h4 {
+        font-size: 14px;
+    }
+
+    .dropdown-item {
+        padding: 10px;
+        gap: 10px;
+        font-size: 13px;
+    }
+
+    .dropdown-icon {
+        font-size: 16px;
+    }
+}
+
+/* Mobile cực nhỏ (iPhone Mini, Android nhỏ) */
+@media (max-width: 360px) {
+
+    .dropdown-menu {
+        width: 210px;
+        right: -50px;
+    }
+
+    .dropdown-item {
+        padding: 8px 10px;
+    }
+
+    .dropdown-avatar {
+        width: 36px;
+        height: 36px;
     }
 }
