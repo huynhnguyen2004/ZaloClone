@@ -19,7 +19,7 @@ export default function FriendList() {
   return (
     <div className="friend-list">
       {friends.map((f) => (
-       <div key={f.id} className="friend-card" onClick={()=>openChat(f)}>
+       <div key={f.friendId} className="friend-card" onClick={()=>openChat(f)}>
   <div className="friend-avatar-wrapper">
     <img
       src={f.avatarUrl || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}

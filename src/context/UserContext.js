@@ -37,12 +37,12 @@ export const UserProvider = ({ children }) => {
     senderAvatarUrl: d.senderAvatarUrl || d.avatar || null,
   });
 
-  /* ======================================
-        FETCH CURRENT USER
-  ====================================== */
+  /* ============================
+        GET CURRENT USER
+  ============================ */
   const fetchCurrentUser = useCallback(async () => {
     const token = sessionStorage.getItem("token");
-    if (!token) return; // không login → không gọi API
+    if (!token) return;
 
     try {
       const res = await getCurrentUser();
@@ -56,12 +56,12 @@ export const UserProvider = ({ children }) => {
     fetchCurrentUser();
   }, [fetchCurrentUser]);
 
-  /* ======================================
+
+  /* ============================
         FETCH FRIEND LIST
-  ====================================== */
+  ============================ */
   const fetchFriends = useCallback(async (userId) => {
     if (!userId) return;
-
     try {
       const res = await getAllFriend({ id: userId });
       setFriends(res.data.result ?? []);
@@ -70,9 +70,9 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
-  /* ======================================
+  /* ============================
         FETCH FRIEND REQUEST LIST
-  ====================================== */
+  ============================ */
   const fetchFriendRequests = useCallback(async (userId) => {
     if (!userId) return;
 
@@ -84,51 +84,48 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
-  /* ======================================
-        Khi có user → tải dữ liệu
-  ====================================== */
+  /* ======================================================
+        KHỞI TẠO WEBSOCKET & FETCH FRIENDS + REQUESTS
+  ====================================================== */
   useEffect(() => {
     if (!currentUser?.id) return;
+    if (wsInitializedRef.current) return; // tránh connect lại
 
-    fetchFriends(currentUser.id);
-    fetchFriendRequests(currentUser.id);
-  }, [currentUser, fetchFriends, fetchFriendRequests]);
-
-  /* ======================================
-        WebSocket
-  ====================================== */
-  useEffect(() => {
-    if (!currentUser?.id) return;
-
-    if (wsInitializedRef.current) return;
     wsInitializedRef.current = true;
 
-    connectWebSocket(
-      currentUser.id,
+    // Fetch danh sách sau khi login
+    fetchFriends(currentUser.id);
+    fetchFriendRequests(currentUser.id);
 
-      // realtime khi có lời mời kết bạn
-      (data) => {
+    // Khởi tạo WebSocket
+    connectWebSocket({
+      userId: currentUser.id,
+
+      onReceiveRequest: (data) => {
         const req = normalizeRequest(data);
-
         setFriendRequests((prev) =>
           prev.some((x) => x.id === req.id) ? prev : [req, ...prev]
         );
       },
 
-      // realtime khi lời mời được chấp nhận
-      () => {
+      onReceiveAccept: () => {
         fetchFriends(currentUser.id);
         fetchFriendRequests(currentUser.id);
-      }
-    );
+      },
+
+    
+    });
+
   }, [currentUser, fetchFriends, fetchFriendRequests]);
 
-  /* ======================================
-        LOGOUT
-  ====================================== */
+
+  /* ============================
+              LOGOUT
+  ============================ */
   const logout = async () => {
     sessionStorage.removeItem("token");
     disconnectWebSocket();
+
     await apiLogout(currentUser?.id);
 
     setCurrentUser(null);
@@ -140,9 +137,9 @@ export const UserProvider = ({ children }) => {
     navigate("/");
   };
 
-  /* ======================================
-        VALUE TRẢ RA CHO TOÀN APP
-  ====================================== */
+  /* ============================
+              VALUE
+  ============================ */
   const value = {
     currentUser,
     friends,
