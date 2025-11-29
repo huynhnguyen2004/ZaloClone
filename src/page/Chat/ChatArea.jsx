@@ -19,13 +19,19 @@ import { sendSocketData } from "../../api/websocket";
 
 import "./ChatArea.css";
 import FriendList from "../../component/FriendList/FriendList";
+import { useChat } from "../../context/ChatContext";
 
 function ChatArea({ activeTab }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   // 🔥 Dữ liệu realtime lấy từ UserContext
   const { friendRequests, removeFriendRequest, currentUser } = useUser();
+  const {activeChat,setActiveChat}=useChat();
 
+  useEffect(() => {
+    // Khi đổi tab → tắt chat
+    setActiveChat(null);
+}, [activeTab]);
   /** Format thời gian */
   const formatRequestTime = (value) => {
     if (!value) return "Vừa gửi";

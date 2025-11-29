@@ -5,13 +5,17 @@ import ChatArea from "../../page/Chat/ChatArea";
 import Modal from "../../component/Modal/Modal";
 import { useUser } from "../../context/UserContext";
 import "./CustomerLayout.css";
+import ChatWindow from "../../component/ChatWindow/ChatWindow";
 import { useNavigate } from "react-router-dom";
+import { useChat } from "../../context/ChatContext";
 
 export default function CustomerLayout() {
   const { currentUser, loading, error} = useUser();
   const [activeTab, setActiveTab] = useState("chats");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const navigate=useNavigate();
+  const { activeChat, setActiveChat } = useChat();
+
  const token=sessionStorage.getItem("token");
   const handleProfileClick = () => {
     setIsProfileModalOpen(true);
@@ -83,6 +87,12 @@ export default function CustomerLayout() {
       >
      
       </Modal>
+      {activeChat && (
+  <div className="floating-chat-window">
+    <ChatWindow onCloseChat={()=>setActiveChat(null)} />
+  </div>
+)}
+
     </div>
   );
 }

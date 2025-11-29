@@ -122,6 +122,55 @@
 .error-message button:hover {
     background-color: #0066cc;
 }
+/* ========== CHAT WINDOW POPUP (giống Facebook Web) ========== */
+
+.floating-chat-window {
+    position: fixed;
+    bottom: 15px;
+    right: 20px;
+    width: 360px;
+    height: 500px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: popupFadeIn 0.25s ease;
+}
+
+/* Animation mượt như Facebook */
+@keyframes popupFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Thu nhỏ khi màn hình nhỏ (mobile/tablet) */
+@media (max-width: 768px) {
+    .floating-chat-window {
+        right: 10px;
+        width: 300px;
+        height: 460px;
+    }
+}
+
+@media (max-width: 480px) {
+    .floating-chat-window {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+    }
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {

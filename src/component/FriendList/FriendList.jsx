@@ -2,9 +2,11 @@ import React from "react";
 import "./FriendList.css";
 
 import { useUser } from "../../context/UserContext";
+import { useChat } from "../../context/ChatContext";
 
 export default function FriendList() {
   const { friends } = useUser();
+  const {openChat}=useChat();
 
   if (!friends || !friends.length)
     return (
@@ -17,7 +19,7 @@ export default function FriendList() {
   return (
     <div className="friend-list">
       {friends.map((f) => (
-       <div key={f.id} className="friend-card">
+       <div key={f.id} className="friend-card" onClick={()=>openChat(f)}>
   <div className="friend-avatar-wrapper">
     <img
       src={f.avatarUrl || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}
