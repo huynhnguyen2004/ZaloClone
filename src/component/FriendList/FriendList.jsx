@@ -1,12 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
+import { BiUserMinus } from "react-icons/bi";
 import "./FriendList.css";
 
 import { useUser } from "../../context/UserContext";
 import { useChat } from "../../context/ChatContext";
+import { unFriend } from "../../api/service/friend";
 
 export default function FriendList() {
-  const { friends } = useUser();
-  const {openChat}=useChat();
+  const { friends, currentUser, setFriends } = useUser();
+  const { openChat } = useChat();
+  const [removingIds, setRemovingIds] = useState([]);
+
+  const handleUnfriend = async (e, friend) => {
+    e.stopPropagation(); // Ngăn không cho click vào card
+    
+    if (!currentUser?.id || removingIds.includes(friend.friendId)) return;
+
+    setRemovingIds((prev) => [...prev, friend.friendId]);
+
+    try {
+      await unFriend({ user1Id: currentUser.id, user2Id: friend.friendId });
+      // Xóa bạn khỏi danh sách
+      setFriends((prev) => prev.filter((f) => f.friendId !== friend.friendId));
+    } catch (err) {
+      console.error("Unfriend error:", err);
+    } finally {
+      setRemovingIds((prev) => prev.filter((id) => id !== friend.friendId));
+    }
+  };
 
   if (!friends || !friends.length)
     return (
@@ -15,6 +36,7 @@ export default function FriendList() {
         <p>Kết bạn để bắt đầu trò chuyện</p>
       </div>
     );
+
 
   return (
     <div className="friend-list">
@@ -33,6 +55,15 @@ export default function FriendList() {
     <h4>{f.friendName}</h4>
     <p>{f.phone}</p>
   </div>
+
+  <button
+    className="unfriend-btn"
+    onClick={(e) => handleUnfriend(e, f)}
+    disabled={removingIds.includes(f.friendId)}
+    title="Hủy kết bạn"
+  >
+    <BiUserMinus />
+  </button>
 </div>
 
       ))}

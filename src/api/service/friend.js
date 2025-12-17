@@ -24,6 +24,6 @@ export const declineFriendRequest = async (requestId) => {
   // OR: return api.post(`/api/friend/decline/${requestId}`);
 };
 
-export const removeFriend = async (userId, friendId) => {
-  return api.post("/api/friends/remove", { userId, friendId });
+export const unFriend = async (params) => {
+  return api.delete("/api/friends/unfriend", {params});
 };

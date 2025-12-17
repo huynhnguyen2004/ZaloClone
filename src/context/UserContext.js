@@ -143,6 +143,7 @@ export const UserProvider = ({ children }) => {
   const value = {
     currentUser,
     friends,
+    setFriends,
     friendRequests,
 
     fetchCurrentUser,

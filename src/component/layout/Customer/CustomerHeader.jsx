@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BiSearch, BiPlus, BiUserPlus, BiUserMinus } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
 import { useUser } from "../../../context/UserContext";
-import { sendFriendRequest, removeFriend } from "../../../api/service/friend";
+import { sendFriendRequest, unFriend } from "../../../api/service/friend";
 import { sendSocketData } from "../../../api/websocket";
 import { search as searchUsers } from "../../../api/service/userService";
 import UserDropdown from "../../UserDropdown/UserDropdown";
@@ -91,7 +91,8 @@ function CustomerHeader({ onProfileClick }) {
         setRemovingIds((prev) => [...prev, friendId]);
 
         try {
-            await removeFriend(currentUser.id, friendId);
+            await unFriend({user1Id:currentUser.id, 
+                user2Id:friendId});
 
             // Cập nhật lại kết quả tìm kiếm
             setResults((prev) =>
