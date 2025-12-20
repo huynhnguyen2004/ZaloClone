@@ -20,6 +20,7 @@ import { sendSocketData } from "../../api/websocket";
 
 import "./ChatArea.css";
 import FriendList from "../../component/FriendList/FriendList";
+import ConversationList from "../../component/ConversationList/ConversationList";
 import { useChat } from "../../context/ChatContext";
 
 function ChatArea({ activeTab }) {
@@ -115,15 +116,7 @@ function ChatArea({ activeTab }) {
             </div>
 
             <div className="chat-list-content">
-              <div className="empty-chat-state">
-                <BiMessageRounded className="empty-icon" />
-                <h3>Chưa có cuộc trò chuyện</h3>
-                <p>Bắt đầu trò chuyện mới với bạn bè</p>
-                <button className="start-chat-btn">
-                  <BiPlus />
-                  Bắt đầu trò chuyện
-                </button>
-              </div>
+              <ConversationList />
             </div>
           </div>
         );

@@ -1,135 +1,161 @@
-// ChatContext.jsx
-import { createContext, useContext, useState, useEffect, useRef } from "react";
-import { getMessage } from "../api/service/chat";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useUser } from "./UserContext";
+import { getMessage } from "../api/service/chat";
+import { getOrCreateConversation } from "../api/service/conversation";
 import { connectWebSocket, disconnectWebSocket } from "../api/websocket";
 
 const ChatContext = createContext();
 export const useChat = () => useContext(ChatContext);
 
 export function ChatProvider({ children }) {
-  const [activeChat, setActiveChat] = useState(null);
+  // ==========================
+  // STATE
+  // ==========================
+  const [activeChat, setActiveChat] = useState(null); // { friend + conversationId }
   const [messages, setMessages] = useState([]);
+  const [latestMessage, setLatestMessage] = useState(null); // 🔥 Tin nhắn mới nhất từ WebSocket
+
   const { currentUser } = useUser();
 
+  // ==========================
+  // REF (chống stale state)
+  // ==========================
   const activeChatRef = useRef(null);
-  const addedMessageIds = useRef(new Set()); // 🔥 Track added messages
+  const addedMessageIds = useRef(new Set());
 
-  // Sync activeChat to ref
   useEffect(() => {
     activeChatRef.current = activeChat;
-    console.log("📌 activeChat updated:", activeChat);
   }, [activeChat]);
 
-  // ========================================
-  // 🔥 KHỞI TẠO WEBSOCKET CHỈ 1 LẦN
-  // ========================================
+  // ==========================
+  // 🔥 WEBSOCKET
+  // ==========================
   useEffect(() => {
-    if (!currentUser?.id) {
-      console.log("❌ No currentUser.id");
-      return;
-    }
-
-    console.log("🚀 Initializing WebSocket for user:", currentUser.id);
+    if (!currentUser?.id) return;
 
     connectWebSocket({
       userId: currentUser.id,
 
       onReceiveMessage: (msg) => {
-        console.log("🎯 onReceiveMessage called with:", msg);
-
+        console.log("📨 onReceiveMessage:", msg);
         const chat = activeChatRef.current;
-        console.log("💬 Current activeChat:", chat);
-
         if (!chat) {
-          console.log("⚠️ No active chat, ignoring message");
+          console.log("⚠️ No active chat");
           return;
         }
 
-        // 🔥 Chặn duplicate messages
-        if (addedMessageIds.current.has(msg.id)) {
-          console.log("⚠️ Duplicate message ignored:", msg.id);
-          return;
-        }
+        // 🔥 Lấy giá trị từ cấu trúc nested hoặc flat
+        const msgConversationId = msg.conversation?.id || msg.conversationId;
+        const msgSenderId = msg.sender?.id || msg.senderId;
 
-        // Lấy ID từ nested object
-        const senderId = msg.sender?.id || msg.senderId;
-        const receiverId = msg.receiver?.id || msg.receiverId;
-
-        const isFromFriend = senderId === chat.friendId;
-        const isToFriend = receiverId === chat.friendId;
-
-        console.log("🔍 Check:", {
-          senderId,
-          receiverId,
+        // ✅ Kiểm tra hội thoại
+        const isMatchConversation = msgConversationId === chat.conversationId;
+        const isMatchByUsers = msgSenderId === chat.friendId;
+        
+        console.log("🔍 Check:", { 
+          msgConversationId, 
+          chatConversationId: chat.conversationId,
+          msgSenderId,
           friendId: chat.friendId,
-          isFromFriend,
-          isToFriend,
+          isMatchConversation, 
+          isMatchByUsers 
         });
 
-        if (isFromFriend || isToFriend) {
-          console.log("✅ Message belongs to this chat, adding to UI");
-          
-          // 🔥 Mark as added
-          addedMessageIds.current.add(msg.id);
-          
-          setMessages((prev) => {
-            // 🔥 Double-check không trùng trong array
-            if (prev.some(m => m.id === msg.id)) {
-              console.log("⚠️ Message already in array:", msg.id);
-              return prev;
-            }
-            
-            console.log("📝 Adding message. Previous count:", prev.length);
-            const updated = [...prev, msg];
-            console.log("📝 New count:", updated.length);
-            return updated;
-          });
-        } else {
-          console.log("❌ Message does not belong to this chat");
+        if (!isMatchConversation && !isMatchByUsers) {
+          console.log("⚠️ Message not for this conversation");
+          return;
         }
+
+        // ❌ Tránh duplicate
+        if (addedMessageIds.current.has(msg.id)) {
+          console.log("⚠️ Duplicate message:", msg.id);
+          return;
+        }
+
+        console.log("✅ Adding message to chat:", msg.id);
+        addedMessageIds.current.add(msg.id);
+
+        setMessages((prev) => [...prev, msg]);
+        
+        // 🔥 Lưu tin nhắn mới nhất để cập nhật ConversationList
+        const msgConvId = msg.conversation?.id || msg.conversationId;
+        const msgContent = msg.content;
+        const msgTime = msg.createdAt;
+        const senderId = msg.sender?.id || msg.senderId;
+        
+        setLatestMessage({
+          conversationId: msgConvId,
+          content: msgContent,
+          createdAt: msgTime,
+          senderId: senderId,
+        });
       },
     });
 
-    return () => {
-      console.log("🧹 Cleanup: Disconnecting WebSocket");
-      disconnectWebSocket();
-    };
+    return () => disconnectWebSocket();
   }, [currentUser?.id]);
 
-  // ========================================
-  // 🔥 MỞ CUỘC CHAT
-  // ========================================
+  // ==========================
+  // 🔥 OPEN CHAT (CỐT LÕI)
+  // ==========================
   const openChat = async (friend) => {
-    console.log("🔓 Opening chat with:", friend);
-    setActiveChat(friend);
-
-    if (!currentUser?.id) {
-      console.log("❌ No currentUser.id in openChat");
-      return;
-    }
+    if (!currentUser?.id || !friend?.friendId) return;
 
     try {
-      const list = await getMessage(currentUser.id, friend.friendId);
-      console.log("📥 Loaded messages:", list.length);
-      
-      // 🔥 Reset tracking khi mở chat mới
-      addedMessageIds.current = new Set(list.map(m => m.id));
-      
+      // reset state
+      setMessages([]);
+      addedMessageIds.current.clear();
+
+      // 1️⃣ LẤY / TẠO CONVERSATION
+      const { conversationId } = await getOrCreateConversation(
+        currentUser.id,
+        friend.friendId
+      );
+
+      // 2️⃣ SET ACTIVE CHAT
+      const chat = {
+        ...friend,
+        conversationId,
+      };
+      setActiveChat(chat);
+
+      // 3️⃣ LOAD MESSAGE
+      const list = await getMessage(conversationId);
+
+      addedMessageIds.current = new Set(list.map((m) => m.id));
       setMessages(list);
+
     } catch (error) {
-      console.error("❌ Error loading messages:", error);
+      console.error("Open chat error:", error);
     }
   };
 
+  // ==========================
+  // 🔥 NOTIFY NEW MESSAGE (cập nhật ConversationList)
+  // ==========================
+  const notifyNewMessage = (msgData) => {
+    setLatestMessage({
+      conversationId: msgData.conversationId,
+      content: msgData.content,
+      createdAt: new Date().toISOString(),
+      senderId: msgData.senderId,
+      isMe: true,
+    });
+  };
+
+  // ==========================
+  // PROVIDER
+  // ==========================
   return (
     <ChatContext.Provider
       value={{
-        messages,
-        setMessages,
         activeChat,
-        setActiveChat,
+        messages,
         openChat,
+        setMessages,
+        setActiveChat,
+        latestMessage, // 🔥 Tin nhắn mới nhất từ WebSocket
+        notifyNewMessage, // 🔥 Gọi khi gửi tin nhắn
       }}
     >
       {children}

@@ -29,7 +29,7 @@ function CustomerSideBar({ onTabChange }) {
             id: "chats",
             icon: BiMessageRounded,
             title: "Tin nhắn",
-            notification: 3
+            
         },
         {
             id: "contacts",

@@ -4,11 +4,10 @@ export const sendMessage=async(data)=>{
     const res=await api.post("/api/message/send",data);
     return res.data.result;
 }
-export const getMessage = async (currentUserId, friendId) => {
+export const getMessage = async (conversationId) => {
   const res = await api.get("/api/message", {
     params: {
-      currentUserId: currentUserId,
-      id: friendId,
+      conversationId:conversationId
     }
   });
 

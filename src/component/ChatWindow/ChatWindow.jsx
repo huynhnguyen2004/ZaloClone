@@ -9,7 +9,7 @@ import { sendMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
 
 export default function ChatWindow({ onCloseChat }) {
-  const { activeChat, messages, setMessages } = useChat();
+  const { activeChat, messages, setMessages, notifyNewMessage } = useChat();
   const { currentUser } = useUser();
   const [text, setText] = useState("");
   const endRef = useRef();
@@ -37,6 +37,7 @@ export default function ChatWindow({ onCloseChat }) {
     const msgBody = {
       senderId: currentUser.id,
       receiverId: activeChat.friendId,
+      conversationId: activeChat.conversationId, // 🔥 Thêm conversationId
       content: text,
     };
 
@@ -62,6 +63,13 @@ export default function ChatWindow({ onCloseChat }) {
 
       // 🔔 Gửi realtime để notify receiver
       sendSocketData("/app/chat", msgBody);
+
+      // 🔥 Cập nhật danh sách hội thoại với tin nhắn mới
+      notifyNewMessage({
+        conversationId: activeChat.conversationId,
+        content: text,
+        senderId: currentUser.id,
+      });
 
       // 🔥 Sau 1 giây, remove khỏi pending (phòng trường hợp WebSocket chậm)
       setTimeout(() => {

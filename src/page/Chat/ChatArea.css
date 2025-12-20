@@ -120,10 +120,9 @@
 .chat-list-content {
     flex: 1;
     display: flex;
-    align-items: center;       /* căn giữa theo chiều dọc */
-    justify-content: center;   /* căn giữa theo chiều ngang */
-    padding: 40px 24px;
-    height: 100%;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 
