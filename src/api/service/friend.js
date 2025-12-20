@@ -19,11 +19,17 @@ export const getAllFriend=async(params)=>{
   return api.get("/api/friends",{params})
 }
 
-export const declineFriendRequest = async (requestId) => {
-  return api.post("/api/friendrequest/decline", { requestId });
-  // OR: return api.post(`/api/friend/decline/${requestId}`);
-};
 
 export const unFriend = async (params) => {
   return api.delete("/api/friends/unfriend", {params});
 };
+export const unRequestFriend=async (id)=>{
+  return api.put("/api/friendrequest/cancele",
+    null,
+    {params:{id:id}});
+}
+export const rejectFriendRequest=async (id)=>{
+  return api.put("/api/friendrequest/reject",
+    null,
+    {params:{id:id}});
+}

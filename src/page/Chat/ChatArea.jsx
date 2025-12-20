@@ -12,7 +12,8 @@ import { useUser } from "../../context/UserContext";
 
 import {
   acceptFriendRequest,
-  declineFriendRequest,
+  unRequestFriend,
+  rejectFriendRequest
 } from "../../api/service/friend";
 
 import { sendSocketData } from "../../api/websocket";
@@ -72,7 +73,7 @@ function ChatArea({ activeTab }) {
   /** Bấm Từ chối */
   const handleDecline = async (req) => {
     try {
-      await declineFriendRequest(req.id);
+      await rejectFriendRequest(req.id);
       removeFriendRequest(req.id);
     } catch (err) {
       console.error("Decline error:", err);

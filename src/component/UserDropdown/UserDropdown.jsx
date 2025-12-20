@@ -10,7 +10,7 @@ import {
     BiInfoCircle
 } from "react-icons/bi";
 import { useUser } from "../../context/UserContext";
-import { acceptFriendRequest, declineFriendRequest } from "../../api/service/friend";
+import { acceptFriendRequest, rejectFriendRequest, unRequestFriend } from "../../api/service/friend";
 import { sendSocketData } from "../../api/websocket";
 import "./UserDropdown.css";
 
@@ -85,7 +85,7 @@ function UserDropdown({ onProfileClick }) {
 
     const handleDecline = async (req) => {
         try {
-            await declineFriendRequest(req.id);
+            await rejectFriendRequest(req.id);
             removeFriendRequest(req.id);
         } catch (err) {
             console.error('Decline friend error', err);
