@@ -6,9 +6,9 @@ import { getMyConversations } from "../../api/service/conversation";
 
 export default function ConversationList() {
   const { currentUser } = useUser();
-  const { openChat, activeChat, latestMessage } = useChat();
+  const { openChat, activeChat, messages } = useChat();
   const [conversations, setConversations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true); // Chỉ loading lần đầu
 
   // 🔥 Load danh sách hội thoại lần đầu
   useEffect(() => {
@@ -16,49 +16,19 @@ export default function ConversationList() {
       if (!currentUser?.id) return;
 
       try {
-        setLoading(true);
         const data = await getMyConversations(currentUser.id);
         setConversations(data || []);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setInitialLoading(false); // Chỉ tắt loading lần đầu
       }
     };
 
     fetchConversations();
-  }, [currentUser?.id]);
+  }, [currentUser?.id, messages]);
 
-  // 🔥 Cập nhật tin nhắn mới nhất khi nhận từ WebSocket (không fetch lại API)
-  useEffect(() => {
-    if (!latestMessage) return;
-
-    setConversations((prev) => {
-      // Tìm conversation cần cập nhật
-      const index = prev.findIndex(
-        (c) => c.conversationId === latestMessage.conversationId
-      );
-
-      if (index === -1) return prev; // Không tìm thấy → giữ nguyên
-
-      // Clone và cập nhật
-      const updated = [...prev];
-      updated[index] = {
-        ...updated[index],
-        lastMessage: latestMessage.content,
-        lastMessageAt: latestMessage.createdAt,
-        isMe: latestMessage.isMe || latestMessage.senderId === currentUser?.id,
-      };
-
-      // Đưa conversation lên đầu danh sách
-      const [movedItem] = updated.splice(index, 1);
-      updated.unshift(movedItem);
-
-      return updated;
-    });
-  }, [latestMessage, currentUser?.id]);
-
-  // 🔥 Format thời gian giống Zalo
+  // 🔥 Truncate tin nhắn cuối
   const formatTime = (dateStr) => {
     if (!dateStr) return "";
 
@@ -111,13 +81,15 @@ export default function ConversationList() {
       friendName: conv.friendName || "Unknown",
       avatarUrl: conv.friendAvatar,
       online: conv.online,
+      lastReadMessageContent:conv.lastReadMessageContent,
+      userIdLastMessage:conv.userIdLastMessage
     };
 
     openChat(friendData);
   };
 
-  // 🔥 Loading skeleton
-  if (loading) {
+  // 🔥 Loading skeleton - Chỉ hiển thị lần đầu
+  if (initialLoading) {
     return (
       <div className="conversation-list">
         {[1, 2, 3, 4, 5].map((i) => (
@@ -161,14 +133,11 @@ export default function ConversationList() {
     <div className="conversation-list">
       {conversations.map((conv) => {
         const isActive = activeChat?.conversationId === conv.conversationId;
-        const hasUnread = conv.unreadCount > 0;
 
         return (
           <div
             key={conv.conversationId}
-            className={`conversation-item ${isActive ? "active" : ""} ${
-              hasUnread ? "has-unread" : ""
-            }`}
+            className={`conversation-item ${isActive ? "active" : ""}`}
             onClick={() => handleClick(conv)}
           >
             {/* Avatar */}
@@ -188,27 +157,17 @@ export default function ConversationList() {
             {/* Info */}
             <div className="conversation-info">
               <div className="conversation-row">
-                <h4
-                  className={`conversation-name ${hasUnread ? "unread" : ""}`}
-                >
+                <h4 className="conversation-name">
                   {conv.friendName}
                 </h4>
-                <span
-                  className={`conversation-time ${hasUnread ? "unread" : ""}`}
-                >
-                  {formatTime(conv.lastMessageAt)}
-                </span>
               </div>
               <div className="conversation-row">
-                <p className={`last-message ${hasUnread ? "unread" : ""}`}>
-                  {conv.isMe && <span className="me-prefix">Bạn: </span>}
-                  {truncateMessage(conv.lastMessage)}
+                <p className="last-message">
+                  {conv.userIdLastMessage === currentUser?.id && (
+                    <span className="me-prefix">Bạn: </span>
+                  )}
+                  {truncateMessage(conv.lastReadMessageContent)}
                 </p>
-                {hasUnread && (
-                  <span className="unread-badge">
-                    {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
-                  </span>
-                )}
               </div>
             </div>
           </div>

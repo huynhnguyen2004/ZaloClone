@@ -13,7 +13,6 @@ export function ChatProvider({ children }) {
   // ==========================
   const [activeChat, setActiveChat] = useState(null); // { friend + conversationId }
   const [messages, setMessages] = useState([]);
-  const [latestMessage, setLatestMessage] = useState(null); // 🔥 Tin nhắn mới nhất từ WebSocket
 
   const { currentUser } = useUser();
 
@@ -83,12 +82,6 @@ export function ChatProvider({ children }) {
         const msgTime = msg.createdAt;
         const senderId = msg.sender?.id || msg.senderId;
         
-        setLatestMessage({
-          conversationId: msgConvId,
-          content: msgContent,
-          createdAt: msgTime,
-          senderId: senderId,
-        });
       },
     });
 
@@ -133,15 +126,7 @@ export function ChatProvider({ children }) {
   // ==========================
   // 🔥 NOTIFY NEW MESSAGE (cập nhật ConversationList)
   // ==========================
-  const notifyNewMessage = (msgData) => {
-    setLatestMessage({
-      conversationId: msgData.conversationId,
-      content: msgData.content,
-      createdAt: new Date().toISOString(),
-      senderId: msgData.senderId,
-      isMe: true,
-    });
-  };
+
 
   // ==========================
   // PROVIDER
@@ -154,8 +139,7 @@ export function ChatProvider({ children }) {
         openChat,
         setMessages,
         setActiveChat,
-        latestMessage, // 🔥 Tin nhắn mới nhất từ WebSocket
-        notifyNewMessage, // 🔥 Gọi khi gửi tin nhắn
+       
       }}
     >
       {children}
