@@ -13,3 +13,12 @@ export const getMessage = async (conversationId) => {
 
   return res.data.result;
 };
+export const readMessage = async (conversationId, userId) => {
+  const res = await api.post("/api/message/read", null, {
+    params: {
+      conversationId: conversationId,
+      userId: userId
+    }
+  });
+  return res.data.result;
+};

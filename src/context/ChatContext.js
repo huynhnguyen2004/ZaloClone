@@ -1,8 +1,13 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useUser } from "./UserContext";
-import { getMessage } from "../api/service/chat";
+import { getMessage, readMessage } from "../api/service/chat";
 import { getOrCreateConversation } from "../api/service/conversation";
-import { connectWebSocket, disconnectWebSocket } from "../api/websocket";
+import {
+  connectWebSocket,
+  disconnectWebSocket,
+  subscribeToConversationSeen,
+  unsubscribeFromConversationSeen,
+} from "../api/websocket";
 
 const ChatContext = createContext();
 export const useChat = () => useContext(ChatContext);
@@ -11,13 +16,14 @@ export function ChatProvider({ children }) {
   // ==========================
   // STATE
   // ==========================
-  const [activeChat, setActiveChat] = useState(null); // { friend + conversationId }
+  const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [seenByFriend, setSeenByFriend] = useState(false);
 
   const { currentUser } = useUser();
 
   // ==========================
-  // REF (chống stale state)
+  // REFS
   // ==========================
   const activeChatRef = useRef(null);
   const addedMessageIds = useRef(new Set());
@@ -27,7 +33,7 @@ export function ChatProvider({ children }) {
   }, [activeChat]);
 
   // ==========================
-  // 🔥 WEBSOCKET
+  // 🔥 WEBSOCKET CONNECT
   // ==========================
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -35,53 +41,59 @@ export function ChatProvider({ children }) {
     connectWebSocket({
       userId: currentUser.id,
 
-      onReceiveMessage: (msg) => {
-        console.log("📨 onReceiveMessage:", msg);
+      // ==========================
+      // 👁️ SEEN EVENT (realtime)
+      // ==========================
+      onSeenMessage: (seenUserId) => {
         const chat = activeChatRef.current;
-        if (!chat) {
-          console.log("⚠️ No active chat");
-          return;
-        }
+        if (!chat) return;
 
-        // 🔥 Lấy giá trị từ cấu trúc nested hoặc flat
+        const myId = Number(currentUser.id);
+        const friendId = Number(chat.friendId);
+        const seenId = Number(seenUserId);
+
+        if (seenId === friendId) {
+          console.log("👁️ Friend has seen messages (realtime)");
+
+          setSeenByFriend(true);
+          setMessages((prev) =>
+            prev.map((msg) =>
+              Number(msg.senderId || msg.sender?.id) === myId
+                ? { ...msg, read: true }
+                : msg
+            )
+          );
+        }
+      },
+
+      // ==========================
+      // 📨 RECEIVE MESSAGE
+      // ==========================
+      onReceiveMessage: (msg) => {
+        const chat = activeChatRef.current;
+        if (!chat) return;
+
         const msgConversationId = msg.conversation?.id || msg.conversationId;
-        const msgSenderId = msg.sender?.id || msg.senderId;
+        const senderId = Number(msg.sender?.id || msg.senderId);
+        const myId = Number(currentUser.id);
+        const friendId = Number(chat.friendId);
 
-        // ✅ Kiểm tra hội thoại
-        const isMatchConversation = msgConversationId === chat.conversationId;
-        const isMatchByUsers = msgSenderId === chat.friendId;
-        
-        console.log("🔍 Check:", { 
-          msgConversationId, 
-          chatConversationId: chat.conversationId,
-          msgSenderId,
-          friendId: chat.friendId,
-          isMatchConversation, 
-          isMatchByUsers 
-        });
+        if (msgConversationId !== chat.conversationId) return;
 
-        if (!isMatchConversation && !isMatchByUsers) {
-          console.log("⚠️ Message not for this conversation");
-          return;
-        }
+        if (addedMessageIds.current.has(msg.id)) return;
 
-        // ❌ Tránh duplicate
-        if (addedMessageIds.current.has(msg.id)) {
-          console.log("⚠️ Duplicate message:", msg.id);
-          return;
-        }
-
-        console.log("✅ Adding message to chat:", msg.id);
         addedMessageIds.current.add(msg.id);
-
         setMessages((prev) => [...prev, msg]);
-        
-        // 🔥 Lưu tin nhắn mới nhất để cập nhật ConversationList
-        const msgConvId = msg.conversation?.id || msg.conversationId;
-        const msgContent = msg.content;
-        const msgTime = msg.createdAt;
-        const senderId = msg.sender?.id || msg.senderId;
-        
+
+        // 🔥 Nếu đang mở chat & tin nhắn từ bạn bè → auto read
+        if (senderId === friendId) {
+          readMessage(chat.conversationId, myId).catch(console.error);
+        }
+
+        // Nếu mình gửi → reset seen
+        if (senderId === myId) {
+          setSeenByFriend(false);
+        }
       },
     });
 
@@ -89,44 +101,67 @@ export function ChatProvider({ children }) {
   }, [currentUser?.id]);
 
   // ==========================
-  // 🔥 OPEN CHAT (CỐT LÕI)
+  // 🔔 SUBSCRIBE SEEN (khi đổi chat)
+  // ==========================
+  useEffect(() => {
+    if (!activeChat?.conversationId || !currentUser?.id) return;
+
+    const conversationId = activeChat.conversationId;
+    const friendId = activeChat.friendId;
+    const myId = currentUser.id;
+
+    const handleSeen = (seenUserId) => {
+      const seenId = Number(seenUserId);
+
+      if (seenId === Number(friendId)) {
+        console.log("👁️ Seen realtime callback");
+
+        setSeenByFriend(true);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            Number(msg.senderId || msg.sender?.id) === Number(myId)
+              ? { ...msg, read: true }
+              : msg
+          )
+        );
+      }
+    };
+
+    subscribeToConversationSeen(conversationId, handleSeen);
+
+    return () => {
+      unsubscribeFromConversationSeen();
+    };
+  }, [activeChat?.conversationId, activeChat?.friendId, currentUser?.id]);
+
+  // ==========================
+  // 🔥 OPEN CHAT
   // ==========================
   const openChat = async (friend) => {
     if (!currentUser?.id || !friend?.friendId) return;
 
     try {
-      // reset state
       setMessages([]);
       addedMessageIds.current.clear();
+      setSeenByFriend(false);
 
-      // 1️⃣ LẤY / TẠO CONVERSATION
       const { conversationId } = await getOrCreateConversation(
         currentUser.id,
         friend.friendId
       );
 
-      // 2️⃣ SET ACTIVE CHAT
-      const chat = {
-        ...friend,
-        conversationId,
-      };
+      const chat = { ...friend, conversationId };
       setActiveChat(chat);
 
-      // 3️⃣ LOAD MESSAGE
       const list = await getMessage(conversationId);
-
       addedMessageIds.current = new Set(list.map((m) => m.id));
       setMessages(list);
 
-    } catch (error) {
-      console.error("Open chat error:", error);
+      await readMessage(conversationId, currentUser.id);
+    } catch (err) {
+      console.error("❌ Open chat error:", err);
     }
   };
-
-  // ==========================
-  // 🔥 NOTIFY NEW MESSAGE (cập nhật ConversationList)
-  // ==========================
-
 
   // ==========================
   // PROVIDER
@@ -139,7 +174,7 @@ export function ChatProvider({ children }) {
         openChat,
         setMessages,
         setActiveChat,
-       
+        seenByFriend,
       }}
     >
       {children}

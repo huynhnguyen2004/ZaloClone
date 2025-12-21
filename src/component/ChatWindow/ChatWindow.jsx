@@ -5,7 +5,7 @@ import { BiArrowBack } from "react-icons/bi";
 import { FiPhone, FiVideo } from "react-icons/fi";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "../../context/UserContext";
-import { sendMessage } from "../../api/service/chat";
+import { sendMessage,readMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
 
 export default function ChatWindow({ onCloseChat }) {
@@ -110,19 +110,30 @@ export default function ChatWindow({ onCloseChat }) {
 
       {/* BODY */}
       <div className="chat-body">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`bubble ${
-              msg.senderId === currentUser.id || msg.sender?.id === currentUser.id
-                ? "right"
-                : "left"
-            }`}
-          >
-            <p className="text">{msg.content}</p>
-            <span className="time">{formatTime(msg.createdAt)}</span>
-          </div>
-        ))}
+        {messages.map((msg, index) => {
+          const senderId = msg.senderId || msg.sender?.id;
+          const isMe = senderId === currentUser.id;
+          
+          // Tìm tin nhắn cuối cùng của mình đã được xem
+          const myMessages = messages.filter(m => (m.senderId || m.sender?.id) === currentUser.id);
+          const lastReadMessage = [...myMessages].reverse().find(m => m.read === true);
+          const isLastReadMessage = isMe && msg.read === true && msg.id === lastReadMessage?.id;
+          
+          return (
+            <div
+              key={msg.id}
+              className={`bubble ${isMe ? "right" : "left"}`}
+            >
+              <p className="text">{msg.content}</p>
+              <div className="bubble-footer">
+                <span className="time">{formatTime(msg.createdAt)}</span>
+                {isLastReadMessage && (
+                  <span className="seen-status">Đã xem</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
 
         <div ref={endRef}></div>
       </div>

@@ -122,12 +122,29 @@
 }
 
 /* Time format */
+/* Bubble footer - time & seen */
+.bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
 .bubble .time {
   font-size: 11px;
   opacity: 0.7;
-  margin-top: 4px;
-  display: block;
-  text-align: right;
+}
+
+/* Seen status */
+.seen-status {
+  font-size: 11px;
+  opacity: 0.8;
+  color: inherit;
+}
+
+.bubble.right .seen-status {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* ============ INPUT AREA ============ */

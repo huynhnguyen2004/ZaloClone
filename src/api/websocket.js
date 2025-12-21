@@ -1,202 +1,190 @@
-// src/api/websocket.js
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { API_BASE_URL } from "./api";
 
 let stompClient = null;
 let connectedUserId = null;
-let currentCallbacks = {}; // 🔥 Lưu callbacks
 
-const WS_BASE_URL = process.env.REACT_APP_WS_BASE_URL || API_BASE_URL;
+// ==========================
+// CALLBACK STORAGE
+// ==========================
+const callbacks = {
+  onReceiveRequest: null,
+  onReceiveAccept: null,
+  onReceiveMessage: null,
+  onSeenMessage: null,
+};
+
+// ==========================
+// SEEN SUBSCRIPTION
+// ==========================
+let seenSubscription = null;
+let pendingSeen = null;
+
+const WS_BASE_URL =
+  process.env.REACT_APP_WS_BASE_URL || API_BASE_URL;
 
 /**
- * Kết nối WebSocket cho 1 user
+ * ==========================
+ * CONNECT WEBSOCKET
+ * ==========================
  */
 export const connectWebSocket = ({
   userId,
   onReceiveRequest,
   onReceiveAccept,
   onReceiveMessage,
+  onSeenMessage,
 }) => {
-  console.log("🔌 connectWebSocket called for userId:", userId);
-  
   if (!userId) {
-    console.warn("❌ Cannot start WebSocket without userId");
+    console.warn("❌ WebSocket: missing userId");
     return;
   }
 
-  // 🔥 MERGE callbacks thay vì ghi đè
-  currentCallbacks = {
-    ...currentCallbacks, // Giữ callbacks cũ
-    ...(onReceiveRequest && { onReceiveRequest }),
-    ...(onReceiveAccept && { onReceiveAccept }),
-    ...(onReceiveMessage && { onReceiveMessage }),
-  };
-  
-  console.log("✅ Callbacks merged:", {
-    hasRequest: !!currentCallbacks.onReceiveRequest,
-    hasAccept: !!currentCallbacks.onReceiveAccept,
-    hasMessage: !!currentCallbacks.onReceiveMessage,
-  });
+  // merge callbacks
+  if (onReceiveRequest) callbacks.onReceiveRequest = onReceiveRequest;
+  if (onReceiveAccept) callbacks.onReceiveAccept = onReceiveAccept;
+  if (onReceiveMessage) callbacks.onReceiveMessage = onReceiveMessage;
+  if (onSeenMessage) callbacks.onSeenMessage = onSeenMessage;
 
-  // 🔥 Nếu đã kết nối với cùng user → return sớm
+  // already connected
   if (stompClient && connectedUserId === userId && stompClient.connected) {
-    console.log("⚠ WebSocket already connected, callbacks merged");
+    console.log("⚠ WS already connected");
     return;
   }
 
-  // Hủy kết nối cũ nếu user khác
+  // disconnect old user
   if (stompClient && connectedUserId !== userId) {
-    console.log("🔄 Switching user, disconnecting old connection");
-    try {
-      stompClient.deactivate();
-    } catch {}
+    stompClient.deactivate();
     stompClient = null;
-    connectedUserId = null;
   }
-
-  const token = sessionStorage.getItem("token");
-
-  const normalizedBase = WS_BASE_URL.replace(/\/$/, "");
-  const socketUrl = `${normalizedBase}/ws${
-    token ? `?token=${encodeURIComponent(token)}` : ""
-  }`;
-
-  console.log("🔌 Connecting to:", socketUrl);
-
-  const sock = new SockJS(socketUrl);
-
-  stompClient = new Client({
-    webSocketFactory: () => sock,
-    reconnectDelay: 700,
-    debug: (str) => {
-      if (str.includes("MESSAGE")) {
-        console.log("📨 STOMP:", str);
-      }
-    },
-    connectHeaders: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
-  });
 
   connectedUserId = userId;
 
+  const token = sessionStorage.getItem("token");
+  const base = WS_BASE_URL.replace(/\/$/, "");
+  const socketUrl = `${base}/ws${token ? `?token=${token}` : ""}`;
+
+  stompClient = new Client({
+    webSocketFactory: () => new SockJS(socketUrl),
+    reconnectDelay: 1000,
+    connectHeaders: token
+      ? { Authorization: `Bearer ${token}` }
+      : {},
+  });
+
   stompClient.onConnect = () => {
-    console.log("🟢 WebSocket CONNECTED for userId:", userId);
-    console.log("🔍 Current callbacks:", {
-      hasRequest: !!currentCallbacks.onReceiveRequest,
-      hasAccept: !!currentCallbacks.onReceiveAccept,
-      hasMessage: !!currentCallbacks.onReceiveMessage,
-    });
+    console.log("🟢 WS CONNECTED:", userId);
 
-    // 🎯 Friend request
+    // ==========================
+    // FRIEND REQUEST
+    // ==========================
     stompClient.subscribe(`/topic/friend-request/${userId}`, (msg) => {
-      console.log("📩 [FRIEND-REQUEST] Raw:", msg.body);
-      if (msg?.body && currentCallbacks.onReceiveRequest) {
-        try {
-          const data = JSON.parse(msg.body);
-          console.log("✅ Calling onReceiveRequest");
-          currentCallbacks.onReceiveRequest(data);
-        } catch (e) {
-          console.error("❌ Parse error:", e);
-        }
-      }
+      callbacks.onReceiveRequest?.(JSON.parse(msg.body));
     });
 
-    // 🎯 Accept friend
     stompClient.subscribe(`/topic/friend-accept/${userId}`, (msg) => {
-      console.log("📩 [FRIEND-ACCEPT] Raw:", msg.body);
-      if (msg?.body && currentCallbacks.onReceiveAccept) {
-        try {
-          const data = JSON.parse(msg.body);
-          console.log("✅ Calling onReceiveAccept");
-          currentCallbacks.onReceiveAccept(data);
-        } catch (e) {
-          console.error("❌ Parse error:", e);
-        }
-      }
+      callbacks.onReceiveAccept?.(JSON.parse(msg.body));
     });
 
-    // 🎯 Tin nhắn gửi đến user
+    // ==========================
+    // CHAT MESSAGE
+    // ==========================
     stompClient.subscribe(`/topic/chat/${userId}`, (msg) => {
-      console.log("📩 [CHAT-RECEIVE] Raw:", msg.body);
-      console.log("🔍 Has callback?", !!currentCallbacks.onReceiveMessage);
-      
-      if (msg?.body && currentCallbacks.onReceiveMessage) {
-        try {
-          const data = JSON.parse(msg.body);
-          console.log("✅ Calling onReceiveMessage with:", data);
-          currentCallbacks.onReceiveMessage(data);
-        } catch (e) {
-          console.error("❌ Parse error:", e);
-        }
-      } else {
-        console.warn("⚠️ No onReceiveMessage callback!");
-      }
+      callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
-    // 🎯 Tin nhắn chính mình gửi
     stompClient.subscribe(`/topic/chat-self/${userId}`, (msg) => {
-      console.log("📩 [CHAT-SELF] Raw:", msg.body);
-      console.log("🔍 Has callback?", !!currentCallbacks.onReceiveMessage);
-      
-      if (msg?.body && currentCallbacks.onReceiveMessage) {
-        try {
-          const data = JSON.parse(msg.body);
-          console.log("✅ Calling onReceiveMessage (self) with:", data);
-          currentCallbacks.onReceiveMessage(data);
-        } catch (e) {
-          console.error("❌ Parse error:", e);
-        }
-      } else {
-        console.warn("⚠️ No onReceiveMessage callback!");
-      }
+      callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
-    console.log("✅ All subscriptions registered");
-  };
+    // ==========================
+    // SEEN (USER QUEUE)
+    // ==========================
+    stompClient.subscribe(`/user/${userId}/queue/seen`, (msg) => {
+      callbacks.onSeenMessage?.(msg.body);
+    });
 
-  stompClient.onWebSocketClose = () => {
-    console.warn("🔌 WebSocket closed");
-    connectedUserId = null;
+    // process pending seen subscribe
+    if (pendingSeen) {
+      subscribeToConversationSeen(
+        pendingSeen.conversationId,
+        pendingSeen.callback
+      );
+      pendingSeen = null;
+    }
   };
 
   stompClient.onStompError = (frame) => {
-    console.error("⚠ STOMP error:", frame.headers["message"], frame);
+    console.error("❌ STOMP error:", frame);
+  };
+
+  stompClient.onWebSocketClose = () => {
+    console.warn("🔌 WS closed");
+    connectedUserId = null;
   };
 
   stompClient.activate();
-  console.log("🚀 WebSocket activation started");
 };
 
 /**
- * Ngắt WS
+ * ==========================
+ * DISCONNECT
+ * ==========================
  */
 export const disconnectWebSocket = () => {
   if (stompClient) {
-    try {
-      stompClient.deactivate();
-    } catch {}
+    stompClient.deactivate();
     stompClient = null;
     connectedUserId = null;
-    console.log("🔴 WebSocket disconnected");
+    seenSubscription = null;
+    console.log("🔴 WS disconnected");
   }
 };
 
 /**
- * Gửi dữ liệu WS
+ * ==========================
+ * SEND DATA
+ * ==========================
  */
 export const sendSocketData = (endpoint, body) => {
-  console.log("📤 Sending to:", endpoint, body);
-  if (stompClient?.connected) {
-    stompClient.publish({
-      destination: endpoint,
-      body: JSON.stringify(body),
-    });
-    console.log("✅ Message sent");
-  } else {
-    console.warn("⚠ WebSocket not ready, state:", stompClient?.connected);
+  if (!stompClient?.connected) return;
+
+  stompClient.publish({
+    destination: endpoint,
+    body: JSON.stringify(body),
+  });
+};
+
+/**
+ * ==========================
+ * SEEN SUBSCRIBE (PER CONVERSATION)
+ * ==========================
+ */
+export const subscribeToConversationSeen = (conversationId, callback) => {
+  if (!stompClient?.connected) {
+    pendingSeen = { conversationId, callback };
+    return;
+  }
+
+  // unsubscribe old
+  if (seenSubscription) {
+    seenSubscription.unsubscribe();
+  }
+
+  const topic = `/topic/conversations/${conversationId}/seen`;
+
+  seenSubscription = stompClient.subscribe(topic, (msg) => {
+    callback?.(msg.body);
+  });
+
+  console.log("👁️ Subscribed seen:", topic);
+};
+
+export const unsubscribeFromConversationSeen = () => {
+  if (seenSubscription) {
+    seenSubscription.unsubscribe();
+    seenSubscription = null;
+    console.log("👁️ Unsubscribed seen");
   }
 };

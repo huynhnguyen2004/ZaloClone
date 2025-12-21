@@ -42,7 +42,7 @@ export default function ConversationList() {
     if (diffMins < 1) return "Vừa xong";
 
     // Trong vòng 1 giờ
-    if (diffMins < 60) return `${diffMins} phút`;
+    if (diffMins < 60) return `${diffMins} phút trước`;
 
     // Trong ngày hôm nay
     if (diffDays === 0) {
@@ -160,6 +160,9 @@ export default function ConversationList() {
                 <h4 className="conversation-name">
                   {conv.friendName}
                 </h4>
+                <span className="conversation-time">
+                  {formatTime(conv.createdAt)}
+                </span>
               </div>
               <div className="conversation-row">
                 <p className="last-message">
