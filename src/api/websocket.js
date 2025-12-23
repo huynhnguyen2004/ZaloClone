@@ -13,6 +13,7 @@ const callbacks = {
   onReceiveAccept: null,
   onReceiveMessage: null,
   onSeenMessage: null,
+  onPresenceChange: null,
 };
 
 // ==========================
@@ -35,6 +36,7 @@ export const connectWebSocket = ({
   onReceiveAccept,
   onReceiveMessage,
   onSeenMessage,
+  onPresenceChange,
 }) => {
   if (!userId) {
     console.warn("❌ WebSocket: missing userId");
@@ -46,6 +48,7 @@ export const connectWebSocket = ({
   if (onReceiveAccept) callbacks.onReceiveAccept = onReceiveAccept;
   if (onReceiveMessage) callbacks.onReceiveMessage = onReceiveMessage;
   if (onSeenMessage) callbacks.onSeenMessage = onSeenMessage;
+  if (onPresenceChange) callbacks.onPresenceChange = onPresenceChange;
 
   // already connected
   if (stompClient && connectedUserId === userId && stompClient.connected) {
@@ -105,6 +108,16 @@ export const connectWebSocket = ({
       callbacks.onSeenMessage?.(msg.body);
     });
 
+    // ==========================
+    // PRESENCE (ONLINE/OFFLINE)
+    // ==========================
+    stompClient.subscribe(`/topic/presence`, (msg) => {
+      callbacks.onPresenceChange?.(JSON.parse(msg.body));
+    });
+
+    // Gửi trạng thái online khi kết nối thành công
+    sendUserOnline(userId);
+
     // process pending seen subscribe
     if (pendingSeen) {
       subscribeToConversationSeen(
@@ -121,8 +134,11 @@ export const connectWebSocket = ({
 
   stompClient.onWebSocketClose = () => {
     console.warn("🔌 WS closed");
+    // Không gọi sendUserOffline ở đây vì WS đã đóng
+    // Backend nên xử lý disconnect event để đánh dấu offline
     connectedUserId = null;
   };
+
 
   stompClient.activate();
 };
@@ -134,11 +150,55 @@ export const connectWebSocket = ({
  */
 export const disconnectWebSocket = () => {
   if (stompClient) {
+    // Gửi trạng thái offline trước khi ngắt kết nối
+    if (connectedUserId) {
+      sendUserOffline(connectedUserId);
+    }
     stompClient.deactivate();
     stompClient = null;
     connectedUserId = null;
     seenSubscription = null;
     console.log("🔴 WS disconnected");
+  }
+};
+
+/**
+ * ==========================
+ * PRESENCE: ONLINE/OFFLINE
+ * ==========================
+ */
+export const sendUserOnline = (userId) => {
+  if (!stompClient?.connected) return;
+  stompClient.publish({
+    destination: "/app/online",
+    body: JSON.stringify(userId),
+  });
+  console.log("🟢 Sent online status for user:", userId);
+};
+
+export const sendUserOffline = (userId) => {
+  if (stompClient?.connected) {
+    stompClient.publish({
+      destination: "/app/offline",
+      body: JSON.stringify(userId),
+    });
+    console.log("🔴 Sent offline status for user:", userId);
+  }
+};
+
+// Sử dụng sendBeacon để gửi offline khi đóng tab (đảm bảo gửi được)
+export const sendUserOfflineBeacon = (userId) => {
+  const token = sessionStorage.getItem("token");
+  const base = (process.env.REACT_APP_WS_BASE_URL || API_BASE_URL).replace(/\/$/, "");
+  const url = `${base}/api/presence/offline`;
+  
+  const data = JSON.stringify({ userId });
+  const blob = new Blob([data], { type: "application/json" });
+  
+  // sendBeacon đảm bảo request được gửi ngay cả khi tab đang đóng
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon(url, blob);
+    console.log("🔴 Sent offline via sendBeacon for user:", userId);
   }
 };
 

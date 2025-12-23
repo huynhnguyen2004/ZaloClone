@@ -18,7 +18,9 @@ export function ChatProvider({ children }) {
   // ==========================
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0); // Số tin nhắn chưa đọc
   const [seenByFriend, setSeenByFriend] = useState(false);
+  const [newMessageTrigger, setNewMessageTrigger] = useState(0); // Trigger để refresh conversation list
 
   const { currentUser } = useUser();
 
@@ -71,29 +73,43 @@ export function ChatProvider({ children }) {
       // ==========================
       onReceiveMessage: (msg) => {
         const chat = activeChatRef.current;
-        if (!chat) return;
-
         const msgConversationId = msg.conversation?.id || msg.conversationId;
         const senderId = Number(msg.sender?.id || msg.senderId);
         const myId = Number(currentUser.id);
-        const friendId = Number(chat.friendId);
 
-        if (msgConversationId !== chat.conversationId) return;
-
-        if (addedMessageIds.current.has(msg.id)) return;
-
-        addedMessageIds.current.add(msg.id);
-        setMessages((prev) => [...prev, msg]);
-
-        // 🔥 Nếu đang mở chat & tin nhắn từ bạn bè → auto read
-        if (senderId === friendId) {
-          readMessage(chat.conversationId, myId).catch(console.error);
-        }
-
-        // Nếu mình gửi → reset seen
+        // Nếu tin nhắn do mình gửi
         if (senderId === myId) {
-          setSeenByFriend(false);
+          if (chat && msgConversationId === chat.conversationId) {
+            if (!addedMessageIds.current.has(msg.id)) {
+              addedMessageIds.current.add(msg.id);
+              setMessages((prev) => [...prev, msg]);
+              setSeenByFriend(false);
+            }
+          }
+          return;
         }
+
+        // 🔥 Tin nhắn từ người khác
+        // Nếu đang mở đúng chat → thêm tin nhắn vào
+        if (chat && chat.conversationId === msgConversationId) {
+          const friendId = Number(chat.friendId);
+
+          if (addedMessageIds.current.has(msg.id)) return;
+
+          addedMessageIds.current.add(msg.id);
+          setMessages((prev) => [...prev, msg]);
+
+          // Tin nhắn từ bạn bè → auto read
+          if (senderId === friendId) {
+            readMessage(chat.conversationId, myId).catch(console.error);
+          }
+        } else {
+          // 🔔 Không đang mở chat này → tăng số tin nhắn chưa đọc
+          setUnreadCount((prev) => prev + 1);
+        }
+        
+        // 🔄 Trigger refresh conversation list khi nhận tin nhắn mới
+        setNewMessageTrigger((prev) => prev + 1);
       },
     });
 
@@ -157,11 +173,19 @@ export function ChatProvider({ children }) {
       addedMessageIds.current = new Set(list.map((m) => m.id));
       setMessages(list);
 
+      // Reset số tin nhắn chưa đọc khi mở chat
+      setUnreadCount(0);
+
       await readMessage(conversationId, currentUser.id);
     } catch (err) {
       console.error("❌ Open chat error:", err);
     }
   };
+
+  // ==========================
+  // CLEAR UNREAD
+  // ==========================
+  const clearUnread = () => setUnreadCount(0);
 
   // ==========================
   // PROVIDER
@@ -175,6 +199,9 @@ export function ChatProvider({ children }) {
         setMessages,
         setActiveChat,
         seenByFriend,
+        unreadCount,
+        clearUnread,
+        newMessageTrigger,
       }}
     >
       {children}

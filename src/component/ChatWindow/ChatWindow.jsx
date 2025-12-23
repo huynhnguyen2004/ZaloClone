@@ -92,9 +92,9 @@ export default function ChatWindow({ onCloseChat }) {
         />
 
         <div className="chat-info">
-          <h3 className="chat-title">{activeChat.friendName}</h3>
-          <span className={`chat-status ${activeChat.online ? "online" : ""}`}>
-            {activeChat.online ? "Đang hoạt động" : "Ngoại tuyến"}
+          <h3 className="chat-title">{activeChat?.friendName} {activeChat?.friendlastName}</h3>
+          <span className={`chat-status ${activeChat?.online ? "online" : ""}`}>
+            {activeChat?.online ? "Đang hoạt động" : "Ngoại tuyến"}
           </span>
         </div>
 

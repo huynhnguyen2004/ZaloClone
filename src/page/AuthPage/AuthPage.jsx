@@ -80,8 +80,7 @@ function AuthPage() {
       setFormData(initialFormState);
     } catch (error) {
       const apiMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
+        error.response?.data?. messenge||
         "Có lỗi xảy ra, vui lòng thử lại.";
       setStatus({ type: "error", message: apiMessage });
     } finally {

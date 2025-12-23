@@ -7,7 +7,7 @@ import { useChat } from "../../context/ChatContext";
 import { unFriend } from "../../api/service/friend";
 
 export default function FriendList() {
-  const { friends, currentUser, setFriends } = useUser();
+  const { friends, currentUser, setFriends, isUserOnline } = useUser();
   const { openChat } = useChat();
   const [removingIds, setRemovingIds] = useState([]);
 
@@ -48,7 +48,8 @@ export default function FriendList() {
       className="friend-avatar"
       alt={f.friendName}
     />
-    {f.online && <span className="online-dot"></span>}
+    {/* Kiểm tra online realtime */}
+    {(isUserOnline(f.friendId) || f.online) && <span className="online-dot"></span>}
   </div>
 
   <div className="friend-info">

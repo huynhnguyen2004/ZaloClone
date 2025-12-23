@@ -5,19 +5,25 @@ import { useChat } from "../../context/ChatContext";
 import { getMyConversations } from "../../api/service/conversation";
 
 export default function ConversationList() {
-  const { currentUser } = useUser();
-  const { openChat, activeChat, messages } = useChat();
+  const { currentUser, isUserOnline } = useUser();
+  const { openChat, activeChat, messages, newMessageTrigger } = useChat();
   const [conversations, setConversations] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true); // Chỉ loading lần đầu
 
-  // 🔥 Load danh sách hội thoại lần đầu
+  // 🔥 Load danh sách hội thoại - refresh khi có tin nhắn mới
   useEffect(() => {
     const fetchConversations = async () => {
       if (!currentUser?.id) return;
 
       try {
         const data = await getMyConversations(currentUser.id);
-        setConversations(data || []);
+        // Sắp xếp theo thời gian tin nhắn mới nhất lên đầu
+        const sorted = (data || []).sort((a, b) => {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA; // Mới nhất lên đầu
+        });
+        setConversations(sorted);
       } catch (err) {
         console.error(err);
       } finally {
@@ -26,7 +32,7 @@ export default function ConversationList() {
     };
 
     fetchConversations();
-  }, [currentUser?.id, messages]);
+  }, [currentUser?.id, messages, newMessageTrigger]);
 
   // 🔥 Truncate tin nhắn cuối
   const formatTime = (dateStr) => {
@@ -133,11 +139,13 @@ export default function ConversationList() {
     <div className="conversation-list">
       {conversations.map((conv) => {
         const isActive = activeChat?.conversationId === conv.conversationId;
+        // Kiểm tra tin nhắn chưa đọc (không phải do mình gửi)
+        const isUnread = conv.isReadLastContent === false && conv.userIdLastMessage !== currentUser?.id;
 
         return (
           <div
             key={conv.conversationId}
-            className={`conversation-item ${isActive ? "active" : ""}`}
+            className={`conversation-item ${isActive ? "active" : ""} ${isUnread ? "has-unread" : ""}`}
             onClick={() => handleClick(conv)}
           >
             {/* Avatar */}
@@ -151,26 +159,29 @@ export default function ConversationList() {
                 className="conversation-avatar"
                 loading="lazy"
               />
-              {conv.online && <span className="online-indicator"></span>}
+              {/* Kiểm tra online realtime */}
+              {(isUserOnline(conv.friendId) || conv.online) && <span className="online-indicator"></span>}
             </div>
 
             {/* Info */}
             <div className="conversation-info">
               <div className="conversation-row">
-                <h4 className="conversation-name">
-                  {conv.friendName}
+                <h4 className={`conversation-name ${isUnread ? "unread" : ""}`}>
+                  {conv.friendName} {conv.friendlastName}
                 </h4>
-                <span className="conversation-time">
+                <span className={`conversation-time ${isUnread ? "unread" : ""}`}>
                   {formatTime(conv.createdAt)}
                 </span>
               </div>
               <div className="conversation-row">
-                <p className="last-message">
+                <p className={`last-message ${isUnread ? "unread" : ""}`}>
                   {conv.userIdLastMessage === currentUser?.id && (
                     <span className="me-prefix">Bạn: </span>
                   )}
                   {truncateMessage(conv.lastReadMessageContent)}
                 </p>
+                {/* Chấm tròn xanh khi có tin chưa đọc */}
+                {isUnread && <span className="unread-dot"></span>}
               </div>
             </div>
           </div>

@@ -111,7 +111,6 @@ function ChatArea({ activeTab }) {
               <div className="chat-filters">
                 <button className="filter-tab active">Tất cả</button>
                 <button className="filter-tab">Chưa đọc</button>
-                <button className="filter-tab">Đã ghim</button>
               </div>
             </div>
 
