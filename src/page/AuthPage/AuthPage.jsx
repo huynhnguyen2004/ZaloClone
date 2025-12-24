@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { login, register } from "../../api/service/authService";
 import "./AuthPage.css";
 import logo from "../../asset/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const initialFormState = {
   firstname: "",
@@ -12,13 +13,17 @@ const initialFormState = {
   password: "",
   confirmPassword: "",
 };
-
+const SITE_KEY = "6LchvTUsAAAAAHygJx9houBHwGhQvHAtOf_yWUa3";
 function AuthPage() {
   const [mode, setMode] = useState("login");
   const [formData, setFormData] = useState(initialFormState);
   const [rememberMe, setRememberMe] = useState(false);
   const [status, setStatus] = useState({ type: "", message: "" });
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [failed, setFailed] = useState(0);
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef(null);
+
   const navigate = useNavigate();
   const { fetchCurrentUser } = useUser();
   const handleChange = (event) => {
@@ -35,16 +40,26 @@ function AuthPage() {
       return;
     }
 
+    // Kiểm tra captcha khi đăng nhập thất bại >= 3 lần
+    if (mode === "login" && failed >= 3 && !captchaToken) {
+      setStatus({ type: "error", message: "Vui lòng xác minh captcha" });
+      return;
+    }
+
     try {
       setLoading(true);
       if (mode === "login") {
         const { data } = await login({
           phone: formData.phone,
           password: formData.password,
+          captchaToken: failed >= 3 ? captchaToken : null,
         });
 
         const token = data?.result?.token;
         if (token) {
+          setFailed(0);
+          setCaptchaToken(null);
+
           sessionStorage.setItem("token", token);
         }
         if (token) {
@@ -63,7 +78,6 @@ function AuthPage() {
             navigate("/admin");
           }
         }
-
       } else {
         await register({
           phone: formData.phone,
@@ -80,9 +94,15 @@ function AuthPage() {
       setFormData(initialFormState);
     } catch (error) {
       const apiMessage =
-        error.response?.data?. messenge||
-        "Có lỗi xảy ra, vui lòng thử lại.";
+        error.response?.data?.messenge || "Có lỗi xảy ra, vui lòng thử lại.";
       setStatus({ type: "error", message: apiMessage });
+      if (mode === "login") {
+        setFailed((prev) => prev + 1);
+      }
+      if (captchaRef.current) {
+        captchaRef.current.reset();
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -127,6 +147,7 @@ function AuthPage() {
               {mode === "login"
                 ? "Vui lòng nhập thông tin để đăng nhập."
                 : "Điền thông tin bên dưới để bắt đầu cùng chúng tôi."}
+             
             </p>
           </div>
 
@@ -213,6 +234,15 @@ function AuthPage() {
               </div>
             )}
 
+             {mode === "login" && failed >= 3 && (
+                <div style={{ marginTop: "12px" }}>
+                  <ReCAPTCHA
+                    ref={captchaRef}
+                    sitekey={SITE_KEY}
+                    onChange={(token) => setCaptchaToken(token)}
+                  />
+                </div>
+              )}
             <button type="submit" className="auth__submit" disabled={loading}>
               {loading
                 ? "Đang xử lý..."
@@ -236,7 +266,6 @@ function AuthPage() {
             <button type="button" aria-label="Facebook sign in">
               <img
                 src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg"
-
                 alt="Facebook"
               />
             </button>
