@@ -12,6 +12,7 @@ import {
 import { useUser } from "../../context/UserContext";
 import { acceptFriendRequest, rejectFriendRequest, unRequestFriend } from "../../api/service/friend";
 import { sendSocketData } from "../../api/websocket";
+import { getAvatarUrl } from "../../utils/avatarHelper";
 import "./UserDropdown.css";
 
 function UserDropdown({ onProfileClick }) {
@@ -101,13 +102,7 @@ function UserDropdown({ onProfileClick }) {
                 title={currentUser?.firstname}
             >
                 <div className="user-avatar-small">
-                    {currentUser?.avatarUrl ? (
-                        <img src={currentUser.avatarUrl} alt="Avatar" />
-                    ) : (
-                        <div className="default-avatar-small">
-                            {currentUser?.firstname?.charAt(0) || "U"}
-                        </div>
-                    )}
+                    <img src={getAvatarUrl(currentUser?.avatarUrl)} alt="Avatar" />
                 </div>
                 {friendRequests?.length > 0 && (
                     <span className="friend-request-badge">{friendRequests.length}</span>
@@ -125,13 +120,7 @@ function UserDropdown({ onProfileClick }) {
                     <div className="dropdown-header">
                         <div className="dropdown-user-info">
                             <div className="dropdown-avatar">
-                                {currentUser?.avatarUrl ? (
-                                    <img src={currentUser.avatarUrl} alt="Avatar" />
-                                ) : (
-                                    <div className="default-dropdown-avatar">
-                                        <BiUser />
-                                    </div>
-                                )}
+                                <img src={getAvatarUrl(currentUser?.avatarUrl)} alt="Avatar" />
                             </div>
                             <div className="dropdown-user-details">
                                 <h4>{currentUser?.firstname} {currentUser?.lastname}</h4>
@@ -155,11 +144,7 @@ function UserDropdown({ onProfileClick }) {
                                 <div key={req.id} className="friend-request-item">
                                     <div className="fr-info">
                                         <div className="fr-avatar">
-                                            {req.senderAvatarUrl ? (
-                                                <img src={req.senderAvatarUrl} alt="avatar" />
-                                            ) : (
-                                                <BiUser />
-                                            )}
+                                            <img src={getAvatarUrl(req.senderAvatarUrl)} alt="avatar" />
                                         </div>
                                         <div className="fr-details">
                                             <div className="fr-name">{req.senderName || req.firstname || req.phone}</div>

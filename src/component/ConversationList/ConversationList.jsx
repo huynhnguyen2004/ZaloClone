@@ -3,6 +3,7 @@ import "./ConversationList.css";
 import { useUser } from "../../context/UserContext";
 import { useChat } from "../../context/ChatContext";
 import { getMyConversations } from "../../api/service/conversation";
+import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function ConversationList() {
   const { currentUser, isUserOnline } = useUser();
@@ -151,10 +152,7 @@ export default function ConversationList() {
             {/* Avatar */}
             <div className="conversation-avatar-wrapper">
               <img
-                src={
-                  conv.friendAvatar ||
-                  "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-                }
+                src={getAvatarUrl(conv.friendAvatar)}
                 alt={conv.friendName}
                 className="conversation-avatar"
                 loading="lazy"

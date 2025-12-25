@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useUser } from "../../context/UserContext";
 import { sendMessage,readMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
+import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function ChatWindow({ onCloseChat }) {
   const { activeChat, messages, setMessages } = useChat();
@@ -84,11 +85,9 @@ export default function ChatWindow({ onCloseChat }) {
         </button>
 
         <img
-          src={
-            activeChat.avatarUrl ||
-            "https://cdn-icons-png.flaticon.com/512/847/847969.png"
-          }
+          src={getAvatarUrl(activeChat.avatarUrl)}
           className="chat-avatar"
+          alt={activeChat.friendName}
         />
 
         <div className="chat-info">

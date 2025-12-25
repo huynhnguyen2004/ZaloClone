@@ -12,6 +12,7 @@ import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
 import { useUser } from "../../../context/UserContext";
 import { useChat } from "../../../context/ChatContext";
+import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
 
 function CustomerSideBar({ onTabChange }) {
@@ -58,13 +59,7 @@ function CustomerSideBar({ onTabChange }) {
             {/* User Avatar */}
             <div className="sidebar-user">
                 <div className="user-avatar-sidebar">
-                    {currentUser?.avatarUrl ? (
-                        <img src={currentUser.avatarUrl} alt="Avatar" />
-                    ) : (
-                        <div className="default-avatar-sidebar">
-                            {currentUser?.firstname?.charAt(0) || "U"}
-                        </div>
-                    )}
+                    <img src={getAvatarUrl(currentUser?.avatarUrl)} alt="Avatar" />
                 </div>
             </div>
 

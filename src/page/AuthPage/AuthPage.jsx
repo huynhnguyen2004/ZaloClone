@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { login, register } from "../../api/service/authService";
 import "./AuthPage.css";
 import logo from "../../asset/logo.png";
@@ -30,6 +30,16 @@ function AuthPage() {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (!status?.message) return;
+
+    const timer = setTimeout(() => {
+      setStatus({ type: "", message: "" });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [status]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -96,6 +106,7 @@ function AuthPage() {
       const apiMessage =
         error.response?.data?.messenge || "Có lỗi xảy ra, vui lòng thử lại.";
       setStatus({ type: "error", message: apiMessage });
+
       if (mode === "login") {
         setFailed((prev) => prev + 1);
       }
@@ -147,11 +158,10 @@ function AuthPage() {
               {mode === "login"
                 ? "Vui lòng nhập thông tin để đăng nhập."
                 : "Điền thông tin bên dưới để bắt đầu cùng chúng tôi."}
-             
             </p>
           </div>
 
-          {status.message && (
+          {status?.message && (
             <div className={`auth__alert ${status.type}`}>{status.message}</div>
           )}
 
@@ -234,15 +244,15 @@ function AuthPage() {
               </div>
             )}
 
-             {mode === "login" && failed >= 3 && (
-                <div style={{ marginTop: "12px" }}>
-                  <ReCAPTCHA
-                    ref={captchaRef}
-                    sitekey={SITE_KEY}
-                    onChange={(token) => setCaptchaToken(token)}
-                  />
-                </div>
-              )}
+            {mode === "login" && failed >= 3 && (
+              <div style={{ marginTop: "12px" }}>
+                <ReCAPTCHA
+                  ref={captchaRef}
+                  sitekey={SITE_KEY}
+                  onChange={(token) => setCaptchaToken(token)}
+                />
+              </div>
+            )}
             <button type="submit" className="auth__submit" disabled={loading}>
               {loading
                 ? "Đang xử lý..."

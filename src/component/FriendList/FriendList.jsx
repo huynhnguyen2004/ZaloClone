@@ -5,6 +5,7 @@ import "./FriendList.css";
 import { useUser } from "../../context/UserContext";
 import { useChat } from "../../context/ChatContext";
 import { unFriend } from "../../api/service/friend";
+import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function FriendList() {
   const { friends, currentUser, setFriends, isUserOnline } = useUser();
@@ -44,7 +45,7 @@ export default function FriendList() {
        <div key={f.friendId} className="friend-card" onClick={()=>openChat(f)}>
   <div className="friend-avatar-wrapper">
     <img
-      src={f.avatarUrl || "https://cdn-icons-png.flaticon.com/512/847/847969.png"}
+      src={getAvatarUrl(f.avatarUrl)}
       className="friend-avatar"
       alt={f.friendName}
     />
