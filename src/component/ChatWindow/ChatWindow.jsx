@@ -11,10 +11,13 @@ import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function ChatWindow({ onCloseChat }) {
   const { activeChat, messages, setMessages } = useChat();
-  const { currentUser } = useUser();
+  const { currentUser, isUserOnline } = useUser();
   const [text, setText] = useState("");
   const endRef = useRef();
   const pendingMessageIds = useRef(new Set()); // 🔥 Track pending messages
+
+  // 🔥 Kiểm tra trạng thái online realtime
+  const isFriendOnline = isUserOnline(activeChat?.friendId) || activeChat?.online;
 
   useEffect(() => {
     if (endRef.current) endRef.current.scrollIntoView({ behavior: "smooth" });
@@ -92,8 +95,8 @@ export default function ChatWindow({ onCloseChat }) {
 
         <div className="chat-info">
           <h3 className="chat-title">{activeChat?.friendName} {activeChat?.friendlastName}</h3>
-          <span className={`chat-status ${activeChat?.online ? "online" : ""}`}>
-            {activeChat?.online ? "Đang hoạt động" : "Ngoại tuyến"}
+          <span className={`chat-status ${isFriendOnline ? "online" : ""}`}>
+            {isFriendOnline ? "Đang hoạt động" : "Ngoại tuyến"}
           </span>
         </div>
 

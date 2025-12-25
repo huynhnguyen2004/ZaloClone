@@ -127,6 +127,15 @@ export const UserProvider = ({ children }) => {
           return newSet;
         });
       },
+
+      // Callback khi WebSocket kết nối thành công
+      onConnected: (userId) => {
+        console.log("🟢 WebSocket connected, setting user online");
+        // Cập nhật currentUser.online = true
+        setCurrentUser((prev) => prev ? { ...prev, online: true } : prev);
+        // Thêm chính mình vào danh sách online
+        setOnlineUsers((prev) => new Set(prev).add(userId));
+      },
     });
 
     // Xử lý khi user đóng tab/browser

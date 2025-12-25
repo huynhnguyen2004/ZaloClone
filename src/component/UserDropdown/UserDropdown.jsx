@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
     BiUser, 
     BiCog, 
@@ -15,7 +16,8 @@ import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import "./UserDropdown.css";
 
-function UserDropdown({ onProfileClick }) {
+function UserDropdown() {
+    const navigate = useNavigate();
     const { currentUser, logout, friendRequests, removeFriendRequest } = useUser();
     const [isOpen, setIsOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
@@ -44,7 +46,7 @@ function UserDropdown({ onProfileClick }) {
         
         switch (action) {
             case 'profile':
-                 console.log('Open profile');
+                navigate('/profile');
                 break;
             case 'settings':
                 console.log('Open settings');

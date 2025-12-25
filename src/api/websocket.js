@@ -14,6 +14,7 @@ const callbacks = {
   onReceiveMessage: null,
   onSeenMessage: null,
   onPresenceChange: null,
+  onConnected: null,
 };
 
 // ==========================
@@ -37,6 +38,7 @@ export const connectWebSocket = ({
   onReceiveMessage,
   onSeenMessage,
   onPresenceChange,
+  onConnected,
 }) => {
   if (!userId) {
     console.warn("❌ WebSocket: missing userId");
@@ -49,6 +51,7 @@ export const connectWebSocket = ({
   if (onReceiveMessage) callbacks.onReceiveMessage = onReceiveMessage;
   if (onSeenMessage) callbacks.onSeenMessage = onSeenMessage;
   if (onPresenceChange) callbacks.onPresenceChange = onPresenceChange;
+  if (onConnected) callbacks.onConnected = onConnected;
 
   // already connected
   if (stompClient && connectedUserId === userId && stompClient.connected) {
@@ -117,6 +120,9 @@ export const connectWebSocket = ({
 
     // Gửi trạng thái online khi kết nối thành công
     sendUserOnline(userId);
+
+    // Gọi callback onConnected để thông báo đã kết nối thành công
+    callbacks.onConnected?.(userId);
 
     // process pending seen subscribe
     if (pendingSeen) {
