@@ -3,6 +3,9 @@ import { API_BASE_URL } from "../api/api";
 // Default avatar khi không có ảnh
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
+// Default cover khi không có ảnh bìa
+const DEFAULT_COVER = null;
+
 /**
  * Xử lý URL avatar từ database
  * Nếu URL đã đầy đủ (http/https) thì trả về nguyên
@@ -23,4 +26,23 @@ export const getAvatarUrl = (avatarUrl) => {
   return `${API_BASE_URL}${cleanPath}`;
 };
 
-export { DEFAULT_AVATAR };
+/**
+ * Xử lý URL cover từ database
+ * Nếu URL đã đầy đủ (http/https) thì trả về nguyên
+ * Nếu URL là relative path (ví dụ: /uploads/cover/user_5/abc.png) thì thêm base URL
+ * Nếu không có URL thì trả về null (sẽ dùng gradient mặc định)
+ */
+export const getCoverUrl = (coverUrl) => {
+  if (!coverUrl) return DEFAULT_COVER;
+
+  // Nếu đã là URL đầy đủ, trả về nguyên
+  if (coverUrl.startsWith("http://") || coverUrl.startsWith("https://")) {
+    return coverUrl;
+  }
+
+  // Nếu là relative path, thêm base URL
+  const cleanPath = coverUrl.startsWith("/") ? coverUrl : `/${coverUrl}`;
+  return `${API_BASE_URL}${cleanPath}`;
+};
+
+export { DEFAULT_AVATAR, DEFAULT_COVER };

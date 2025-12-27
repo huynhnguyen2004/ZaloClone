@@ -12,6 +12,8 @@ const initialFormState = {
   phone: "",
   password: "",
   confirmPassword: "",
+  birthday: "",
+  gender: 0,
 };
 const SITE_KEY = "6LchvTUsAAAAAHygJx9houBHwGhQvHAtOf_yWUa3";
 function AuthPage() {
@@ -94,6 +96,8 @@ function AuthPage() {
           password: formData.password,
           firstname: formData.firstname,
           lastname: formData.lastname,
+          birthday: formData.birthday,
+          gender: parseInt(formData.gender),
         });
         setStatus({
           type: "success",
@@ -215,17 +219,66 @@ function AuthPage() {
             </label>
 
             {mode === "register" && (
-              <label>
-                Xác nhận mật khẩu
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                />
-              </label>
+              <>
+                <label>
+                  Xác nhận mật khẩu
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Ngày sinh
+                  <input
+                    type="date"
+                    name="birthday"
+                    value={formData.birthday}
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+
+                <div className="auth__gender">
+                  <span>Giới tính</span>
+                  <div className="auth__gender-options">
+                    <label>
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={0}
+                        checked={parseInt(formData.gender) === 0}
+                        onChange={handleChange}
+                      />
+                      Nam
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={1}
+                        checked={parseInt(formData.gender) === 1}
+                        onChange={handleChange}
+                      />
+                      Nữ
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={2}
+                        checked={parseInt(formData.gender) === 2}
+                        onChange={handleChange}
+                      />
+                      Khác
+                    </label>
+                  </div>
+                </div>
+              </>
             )}
 
             {mode === "login" && (

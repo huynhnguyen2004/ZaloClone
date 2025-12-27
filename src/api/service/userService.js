@@ -19,7 +19,14 @@ export const uploadAvatar = async (file, userId) => {
   const res = await api.post("/api/user/uploads/avatar", formData);
   return res.data.result;
 };
+export const uploadCover = async (file, userId) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("userId", userId);
 
+  const res = await api.post("/api/user/uploads/cover", formData);
+  return res.data.result;
+};
 
 
 

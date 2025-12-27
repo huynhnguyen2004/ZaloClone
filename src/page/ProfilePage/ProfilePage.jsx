@@ -10,21 +10,25 @@ import {
     BiShield,
     BiCheck,
     BiX,
-    BiImageAdd
+    BiImageAdd,
+    BiMale,
+    BiCake
 } from "react-icons/bi";
 import { MdVerified } from "react-icons/md";
 import { useUser } from "../../context/UserContext";
-import { getAvatarUrl } from "../../utils/avatarHelper";
-import { uploadAvatar } from "../../api/service/userService";
+import { getAvatarUrl, getCoverUrl } from "../../utils/avatarHelper";
+import { uploadAvatar, uploadCover } from "../../api/service/userService";
 import "./ProfilePage.css";
 
 function ProfilePage() {
     const navigate = useNavigate();
     const { currentUser, fetchCurrentUser } = useUser();
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [uploadingCover, setUploadingCover] = useState(false);
     const [showAvatarPreview, setShowAvatarPreview] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
     const fileInputRef = useRef(null);
+    const coverInputRef = useRef(null);
 
     // Xử lý quay lại
     const handleBack = () => {
@@ -70,6 +74,39 @@ function ProfilePage() {
         }
     };
 
+    // Upload cover
+    const handleCoverChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            setMessage({ type: "error", text: "Vui lòng chọn file ảnh" });
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setMessage({ type: "error", text: "Ảnh bìa không được vượt quá 10MB" });
+            return;
+        }
+
+        try {
+            setUploadingCover(true);
+            await uploadCover(file, currentUser.id);
+            await fetchCurrentUser();
+            setMessage({ type: "success", text: "Cập nhật ảnh bìa thành công!" });
+        } catch (err) {
+            console.error("Upload cover error:", err);
+            setMessage({ type: "error", text: "Không thể cập nhật ảnh bìa" });
+        } finally {
+            setUploadingCover(false);
+            if (coverInputRef.current) coverInputRef.current.value = "";
+        }
+    };
+
+    // Click nút camera cover để upload
+    const handleCoverCameraClick = () => {
+        coverInputRef.current?.click();
+    };
+
     // Clear message sau 3s
     React.useEffect(() => {
         if (message.text) {
@@ -86,6 +123,17 @@ function ProfilePage() {
             month: "2-digit", 
             year: "numeric"
         });
+    };
+
+    // Format giới tính
+    const formatGender = (gender) => {
+        if (gender === null || gender === undefined) return "Chưa cập nhật";
+        switch (gender) {
+            case 0: return "Nam";
+            case 1: return "Nữ";
+            case 2: return "Khác";
+            default: return "Chưa cập nhật";
+        }
     };
 
     const fullName = `${currentUser?.firstname || ""} ${currentUser?.lastname || ""}`.trim() || "Người dùng";
@@ -118,8 +166,30 @@ function ProfilePage() {
 
             {/* Cover & Avatar Section */}
             <div className="zalo-cover-section">
-                <div className="zalo-cover-image">
+                <div className="zalo-cover-image" style={getCoverUrl(currentUser?.coverUrl) ? {
+                    backgroundImage: `url(${getCoverUrl(currentUser?.coverUrl)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                } : {}}>
                     <div className="cover-gradient"></div>
+                    <button 
+                        className="zalo-cover-camera-btn"
+                        onClick={handleCoverCameraClick}
+                        disabled={uploadingCover}
+                    >
+                        {uploadingCover ? (
+                            <div className="cover-spinner"></div>
+                        ) : (
+                            <BiCamera size={18} />
+                        )}
+                    </button>
+                    <input
+                        type="file"
+                        ref={coverInputRef}
+                        onChange={handleCoverChange}
+                        accept="image/*"
+                        hidden
+                    />
                 </div>
                 
                 <div className="zalo-avatar-container">
@@ -201,6 +271,26 @@ function ProfilePage() {
                         <div className="info-value phone-value">
                             {currentUser?.phone || "Chưa cập nhật"}
                         </div>
+                    </div>
+
+                    <div className="zalo-info-divider"></div>
+
+                    <div className="zalo-info-item">
+                        <div className="info-label">
+                            <BiMale className="info-icon" />
+                            <span>Giới tính</span>
+                        </div>
+                        <div className="info-value">{formatGender(currentUser?.gender)}</div>
+                    </div>
+
+                    <div className="zalo-info-divider"></div>
+
+                    <div className="zalo-info-item">
+                        <div className="info-label">
+                            <BiCake className="info-icon" />
+                            <span>Ngày sinh</span>
+                        </div>
+                        <div className="info-value">{formatDate(currentUser?.birthday)}</div>
                     </div>
 
                     <div className="zalo-info-divider"></div>
