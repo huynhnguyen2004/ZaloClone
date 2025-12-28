@@ -172,7 +172,7 @@ function UserProfilePage() {
                 friendId: profile.id,
                 friendName: `${profile.firstname || ""} ${profile.lastname || ""}`.trim(),
                 avatarUrl: profile.avatarUrl,
-                online: false
+                online: profile.online || false
             });
             navigate("/home");
         }
@@ -400,6 +400,8 @@ function UserProfilePage() {
                             alt={fullName}
                             className="up-avatar-img"
                         />
+                        {/* Online status indicator */}
+                        <span className={`up-online-status ${profile.online ? 'online' : 'offline'}`}></span>
                     </div>
                 </div>
 

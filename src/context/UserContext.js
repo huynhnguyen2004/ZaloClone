@@ -43,7 +43,7 @@ export const UserProvider = ({ children }) => {
   ============================ */
   const fetchCurrentUser = useCallback(async () => {
     const token = sessionStorage.getItem("token");
-    if (!token) return;
+    if (!token) navigate("/");
 
     try {
       const res = await getCurrentUser();
