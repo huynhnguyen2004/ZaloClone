@@ -459,3 +459,234 @@
         height: 32px;
     }
 }
+
+/* ===== Edit Info Button ===== */
+.zalo-section-title {
+    position: relative;
+}
+
+.edit-info-btn {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #e7f3ff;
+    border: none;
+    border-radius: 20px;
+    color: #0068ff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-info-btn:hover {
+    background: #0068ff;
+    color: #fff;
+}
+
+/* ===== Edit Modal ===== */
+.edit-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.edit-modal-container {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.edit-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: #0068ff;
+    color: #fff;
+}
+
+.edit-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.edit-modal-close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.edit-modal-close:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.edit-modal-body {
+    padding: 24px 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.edit-form-group {
+    margin-bottom: 20px;
+}
+
+.edit-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.edit-form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #081c36;
+}
+
+.edit-form-group .form-icon {
+    font-size: 18px;
+    color: #0068ff;
+}
+
+.edit-form-group input,
+.edit-form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #081c36;
+    background: #f8f9fa;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.edit-form-group input:focus,
+.edit-form-group select:focus {
+    outline: none;
+    border-color: #0068ff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1);
+}
+
+.edit-form-group input:disabled,
+.edit-form-group select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.edit-form-group input::placeholder {
+    color: #a0aec0;
+}
+
+.edit-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e1e4e8;
+}
+
+.edit-cancel-btn {
+    flex: 1;
+    padding: 12px 20px;
+    background: #fff;
+    border: 1px solid #e1e4e8;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #7589a3;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-cancel-btn:hover {
+    background: #f0f2f5;
+    border-color: #d1d5db;
+}
+
+.edit-cancel-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.edit-save-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: #0068ff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-save-btn:hover {
+    background: #0055d4;
+}
+
+.edit-save-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* ===== Responsive for Edit Modal ===== */
+@media (max-width: 480px) {
+    .edit-modal-container {
+        max-width: 100%;
+        margin: 10px;
+    }
+    
+    .edit-info-btn span {
+        display: none;
+    }
+    
+    .edit-info-btn {
+        padding: 8px 12px;
+    }
+}

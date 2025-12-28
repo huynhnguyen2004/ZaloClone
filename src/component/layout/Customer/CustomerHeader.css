@@ -92,23 +92,28 @@
     cursor: default;
 }
 
-.search-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #bfdbfe, #e0f2fe);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    color: #0f172a;
-    overflow: hidden;
+.search-avatar-wrapper {
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.2s;
 }
 
-.search-avatar img {
-    width: 100%;
-    height: 100%;
+.search-avatar-wrapper:hover {
+    transform: scale(1.1);
+}
+
+.search-avatar-wrapper:hover .search-avatar {
+    box-shadow: 0 2px 8px rgba(0, 104, 255, 0.3);
+    border-color: #0068ff;
+}
+
+.search-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     object-fit: cover;
+    border: 2px solid transparent;
+    transition: all 0.2s;
 }
 
 .search-info {

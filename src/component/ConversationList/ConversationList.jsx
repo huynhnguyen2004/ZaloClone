@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
 import { useUser } from "../../context/UserContext";
 import { useChat } from "../../context/ChatContext";
@@ -6,6 +7,7 @@ import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function ConversationList() {
+  const navigate = useNavigate();
   const { currentUser, isUserOnline } = useUser();
   const { openChat, activeChat, messages, newMessageTrigger } = useChat();
   const [conversations, setConversations] = useState([]);
@@ -95,6 +97,12 @@ export default function ConversationList() {
     openChat(friendData);
   };
 
+  // 🔥 Click vào avatar để xem profile
+  const handleAvatarClick = (e, userId) => {
+    e.stopPropagation(); // Ngăn không cho click vào conversation
+    navigate(`/user/${userId}`);
+  };
+
   // 🔥 Loading skeleton - Chỉ hiển thị lần đầu
   if (initialLoading) {
     return (
@@ -154,8 +162,10 @@ export default function ConversationList() {
               <img
                 src={getAvatarUrl(conv.friendAvatar)}
                 alt={conv.friendName}
-                className="conversation-avatar"
+                className="conversation-avatar clickable-avatar"
                 loading="lazy"
+                onClick={(e) => handleAvatarClick(e, conv.friendId)}
+                title="Xem thông tin"
               />
               {/* Kiểm tra online realtime */}
               {(isUserOnline(conv.friendId) || conv.online) && <span className="online-indicator"></span>}

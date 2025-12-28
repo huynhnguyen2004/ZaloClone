@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BiUserMinus } from "react-icons/bi";
 import "./FriendList.css";
 
@@ -8,6 +9,7 @@ import { unFriend } from "../../api/service/friend";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function FriendList() {
+  const navigate = useNavigate();
   const { friends, currentUser, setFriends, isUserOnline } = useUser();
   const { openChat } = useChat();
   const [removingIds, setRemovingIds] = useState([]);
@@ -30,6 +32,12 @@ export default function FriendList() {
     }
   };
 
+  // Click vào avatar để xem profile
+  const handleAvatarClick = (e, userId) => {
+    e.stopPropagation(); // Ngăn không cho click vào card
+    navigate(`/user/${userId}`);
+  };
+
   if (!friends || !friends.length)
     return (
       <div className="empty-chat-state">
@@ -46,8 +54,10 @@ export default function FriendList() {
   <div className="friend-avatar-wrapper">
     <img
       src={getAvatarUrl(f.avatarUrl)}
-      className="friend-avatar"
+      className="friend-avatar clickable-avatar"
       alt={f.friendName}
+      onClick={(e) => handleAvatarClick(e, f.friendId)}
+      title="Xem thông tin"
     />
     {/* Kiểm tra online realtime */}
     {(isUserOnline(f.friendId) || f.online) && <span className="online-dot"></span>}

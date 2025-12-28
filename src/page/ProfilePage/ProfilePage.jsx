@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -12,12 +12,14 @@ import {
     BiX,
     BiImageAdd,
     BiMale,
-    BiCake
+    BiCake,
+    BiEdit,
+    BiSave
 } from "react-icons/bi";
 import { MdVerified } from "react-icons/md";
 import { useUser } from "../../context/UserContext";
 import { getAvatarUrl, getCoverUrl } from "../../utils/avatarHelper";
-import { uploadAvatar, uploadCover } from "../../api/service/userService";
+import { uploadAvatar, uploadCover, editInfor } from "../../api/service/userService";
 import "./ProfilePage.css";
 
 function ProfilePage() {
@@ -27,8 +29,53 @@ function ProfilePage() {
     const [uploadingCover, setUploadingCover] = useState(false);
     const [showAvatarPreview, setShowAvatarPreview] = useState(false);
     const [message, setMessage] = useState({ type: "", text: "" });
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        firstname: "",
+        lastname: "",
+        gender: null,
+        birthday: ""
+    });
     const fileInputRef = useRef(null);
     const coverInputRef = useRef(null);
+
+    // Khởi tạo form data khi mở modal
+    useEffect(() => {
+        if (showEditModal && currentUser) {
+            setFormData({
+                firstname: currentUser.firstname || "",
+                lastname: currentUser.lastname || "",
+                gender: currentUser.gender,
+                birthday: currentUser.birthday ? currentUser.birthday.split("T")[0] : ""
+            });
+        }
+    }, [showEditModal, currentUser]);
+
+    // Xử lý thay đổi input
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === "gender" ? (value === "" ? null : parseInt(value)) : value
+        }));
+    };
+
+    // Lưu thông tin đã chỉnh sửa
+    const handleSaveInfo = async () => {
+        try {
+            setIsEditing(true);
+            await editInfor(currentUser.id, formData);
+            await fetchCurrentUser();
+            setShowEditModal(false);
+            setMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
+        } catch (err) {
+            console.error("Edit info error:", err);
+            setMessage({ type: "error", text: "Không thể cập nhật thông tin" });
+        } finally {
+            setIsEditing(false);
+        }
+    };
 
     // Xử lý quay lại
     const handleBack = () => {
@@ -240,6 +287,13 @@ function ProfilePage() {
                 <div className="zalo-section-title">
                     <BiUser size={20} />
                     <span>Thông tin cá nhân</span>
+                    <button 
+                        className="edit-info-btn"
+                        onClick={() => setShowEditModal(true)}
+                    >
+                        <BiEdit size={18} />
+                        <span>Chỉnh sửa</span>
+                    </button>
                 </div>
 
                 <div className="zalo-info-card">
@@ -357,6 +411,129 @@ function ProfilePage() {
                                 >
                                     <BiImageAdd size={20} />
                                     <span>Đổi ảnh đại diện</span>
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Edit Info Modal */}
+            <AnimatePresence>
+                {showEditModal && (
+                    <motion.div 
+                        className="edit-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => !isEditing && setShowEditModal(false)}
+                    >
+                        <motion.div 
+                            className="edit-modal-container"
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="edit-modal-header">
+                                <h3>Chỉnh sửa thông tin</h3>
+                                <button 
+                                    className="edit-modal-close"
+                                    onClick={() => !isEditing && setShowEditModal(false)}
+                                    disabled={isEditing}
+                                >
+                                    <BiX size={24} />
+                                </button>
+                            </div>
+
+                            <div className="edit-modal-body">
+                                <div className="edit-form-group">
+                                    <label>
+                                        <BiUser className="form-icon" />
+                                        Họ
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="firstname"
+                                        value={formData.firstname}
+                                        onChange={handleInputChange}
+                                        placeholder="Nhập họ"
+                                        disabled={isEditing}
+                                    />
+                                </div>
+
+                                <div className="edit-form-group">
+                                    <label>
+                                        <BiUser className="form-icon" />
+                                        Tên
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="lastname"
+                                        value={formData.lastname}
+                                        onChange={handleInputChange}
+                                        placeholder="Nhập tên"
+                                        disabled={isEditing}
+                                    />
+                                </div>
+
+                                <div className="edit-form-group">
+                                    <label>
+                                        <BiMale className="form-icon" />
+                                        Giới tính
+                                    </label>
+                                    <select
+                                        name="gender"
+                                        value={formData.gender === null ? "" : formData.gender}
+                                        onChange={handleInputChange}
+                                        disabled={isEditing}
+                                    >
+                                        <option value="">Chọn giới tính</option>
+                                        <option value="0">Nam</option>
+                                        <option value="1">Nữ</option>
+                                        <option value="2">Khác</option>
+                                    </select>
+                                </div>
+
+                                <div className="edit-form-group">
+                                    <label>
+                                        <BiCake className="form-icon" />
+                                        Ngày sinh
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="birthday"
+                                        value={formData.birthday}
+                                        onChange={handleInputChange}
+                                        disabled={isEditing}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="edit-modal-footer">
+                                <button 
+                                    className="edit-cancel-btn"
+                                    onClick={() => setShowEditModal(false)}
+                                    disabled={isEditing}
+                                >
+                                    Hủy
+                                </button>
+                                <button 
+                                    className="edit-save-btn"
+                                    onClick={handleSaveInfo}
+                                    disabled={isEditing}
+                                >
+                                    {isEditing ? (
+                                        <>
+                                            <div className="btn-spinner"></div>
+                                            Đang lưu...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <BiSave size={18} />
+                                            Lưu thay đổi
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </motion.div>

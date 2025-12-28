@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BiSearch,
   BiMessageRounded,
@@ -11,7 +12,7 @@ import { MdOutlineArticle } from "react-icons/md";
 import { useUser } from "../../context/UserContext";
 
 import {
-  acceptFriendRequest,
+  acceptFriend,
   unRequestFriend,
   rejectFriendRequest
 } from "../../api/service/friend";
@@ -24,6 +25,7 @@ import ConversationList from "../../component/ConversationList/ConversationList"
 import { useChat } from "../../context/ChatContext";
 
 function ChatArea({ activeTab }) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
   // 🔥 Dữ liệu realtime lấy từ UserContext
@@ -51,12 +53,14 @@ function ChatArea({ activeTab }) {
   /** Bấm Chấp nhận */
   const handleAccept = async (req) => {
     try {
-      const res = await acceptFriendRequest(req.id);
+      // API cần meId (người nhận) và otherId (người gửi - senderId)
+      const senderId = req.senderId || req.id;
+      const res = await acceptFriend(currentUser.id, senderId);
 
-      const payload = res?.data || {
+      const payload = res || {
         id: req.id,
-        senderId: req.senderId,
-        receiverId: req.receiverId,
+        senderId: senderId,
+        receiverId: currentUser.id,
       };
 
       try {
@@ -74,7 +78,9 @@ function ChatArea({ activeTab }) {
   /** Bấm Từ chối */
   const handleDecline = async (req) => {
     try {
-      await rejectFriendRequest(req.id);
+      // API cần meId (người nhận) và userId (người gửi - senderId)
+      const senderId = req.senderId || req.id;
+      await rejectFriendRequest(currentUser.id, senderId);
       removeFriendRequest(req.id);
     } catch (err) {
       console.error("Decline error:", err);
@@ -159,6 +165,7 @@ function ChatArea({ activeTab }) {
                 handleAccept={handleAccept}
                 handleDecline={handleDecline}
                 formatRequestTime={formatRequestTime}
+                onAvatarClick={(userId) => navigate(`/user/${userId}`)}
               />
             </div>
           </div>
@@ -222,6 +229,7 @@ const FriendRequestSection = ({
   handleAccept,
   handleDecline,
   formatRequestTime,
+  onAvatarClick,
 }) => (
   <div className="friend-requests-panel">
     <div className="fr-panel-header">
@@ -237,11 +245,17 @@ const FriendRequestSection = ({
         {friendRequests.map((req) => {
           const displayName = req.senderName || req.phone || "Người dùng";
           const displayId = req.senderId || req.phone || req.id;
+          const userId = req.senderId || req.id;
 
           return (
             <div key={req.id || displayId} className="friend-request-card">
               <div className="fr-card-meta">
-                <div className="fr-card-avatar">
+                <div 
+                  className="fr-card-avatar clickable"
+                  onClick={() => userId && onAvatarClick && onAvatarClick(userId)}
+                  style={{ cursor: userId ? "pointer" : "default" }}
+                  title="Xem trang cá nhân"
+                >
                   {req.senderAvatarUrl ? (
                     <img src={req.senderAvatarUrl} alt={displayName} />
                   ) : (

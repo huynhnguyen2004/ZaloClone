@@ -1,4 +1,5 @@
 // ChatWindow.jsx
+import { useNavigate } from "react-router-dom";
 import { useChat } from "../../context/ChatContext";
 import "./ChatWindow.css";
 import { BiArrowBack } from "react-icons/bi";
@@ -10,6 +11,7 @@ import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function ChatWindow({ onCloseChat }) {
+  const navigate = useNavigate();
   const { activeChat, messages, setMessages } = useChat();
   const { currentUser, isUserOnline } = useUser();
   const [text, setText] = useState("");
@@ -89,8 +91,10 @@ export default function ChatWindow({ onCloseChat }) {
 
         <img
           src={getAvatarUrl(activeChat.avatarUrl)}
-          className="chat-avatar"
+          className="chat-avatar clickable"
           alt={activeChat.friendName}
+          onClick={() => navigate(`/user/${activeChat.friendId}`)}
+          title="Xem trang cá nhân"
         />
 
         <div className="chat-info">

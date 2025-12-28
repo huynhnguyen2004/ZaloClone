@@ -1,0 +1,602 @@
+/* ===== User Profile Page ===== */
+.user-profile-page {
+    min-height: 100vh;
+    background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== Header ===== */
+.up-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #0068ff;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.up-back-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.up-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.up-header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.up-header-spacer {
+    width: 40px;
+}
+
+/* ===== Toast Message ===== */
+.up-toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.up-toast.success {
+    background: #00c853;
+    color: #fff;
+}
+
+.up-toast.error {
+    background: #ff5252;
+    color: #fff;
+}
+
+/* ===== Loading State ===== */
+.up-loading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.up-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #0068ff;
+    border-radius: 50%;
+    animation: upSpin 0.8s linear infinite;
+}
+
+@keyframes upSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.up-loading p {
+    color: #6b7280;
+    font-size: 15px;
+}
+
+/* ===== Error State ===== */
+.up-error {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.up-error p {
+    color: #6b7280;
+    font-size: 15px;
+}
+
+.up-error button {
+    padding: 10px 24px;
+    background: #0068ff;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.up-error button:hover {
+    background: #0055d4;
+}
+
+/* ===== Cover & Avatar Section ===== */
+.up-cover-section {
+    position: relative;
+    background: #fff;
+    padding-bottom: 24px;
+}
+
+.up-cover-image {
+    height: 200px;
+    background: linear-gradient(135deg, #0068ff 0%, #00a8ff 50%, #00d4ff 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.up-cover-image::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.up-cover-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+    pointer-events: none;
+}
+
+.up-avatar-container {
+    display: flex;
+    justify-content: center;
+    margin-top: -70px;
+    position: relative;
+    z-index: 10;
+}
+
+.up-avatar-wrapper {
+    position: relative;
+    cursor: pointer;
+}
+
+.up-avatar-img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.up-avatar-wrapper:hover .up-avatar-img {
+    transform: scale(1.03);
+}
+
+/* ===== Name Section ===== */
+.up-name-section {
+    text-align: center;
+    margin-top: 16px;
+    padding: 0 20px;
+}
+
+.up-display-name {
+    margin: 0 0 12px;
+    font-size: 26px;
+    font-weight: 700;
+    color: #081c36;
+}
+
+.up-gender-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #f0f2f5;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #65676b;
+    margin-bottom: 12px;
+}
+
+.up-gender-badge svg {
+    color: #0068ff;
+}
+
+/* ===== Relationship Badge ===== */
+.up-relationship-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.up-friend-badge {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.up-pending-badge {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.up-received-badge {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* ===== Action Buttons Section ===== */
+.up-actions-section {
+    padding: 20px;
+    background: #fff;
+    margin-top: 8px;
+}
+
+.up-action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.up-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 160px;
+}
+
+.up-action-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Add Friend Button */
+.up-add-friend-btn {
+    background: linear-gradient(135deg, #0068ff 0%, #00a8ff 100%);
+    color: #fff;
+    flex: 1;
+    max-width: 300px;
+}
+
+.up-add-friend-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 104, 255, 0.4);
+}
+
+/* Cancel Request Button */
+.up-cancel-btn {
+    background: #f3f4f6;
+    color: #6b7280;
+    flex: 1;
+    max-width: 300px;
+}
+
+.up-cancel-btn:hover:not(:disabled) {
+    background: #e5e7eb;
+}
+
+/* Accept Button */
+.up-accept-btn {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: #fff;
+    flex: 1;
+}
+
+.up-accept-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+}
+
+/* Reject Button */
+.up-reject-btn {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.up-reject-btn:hover:not(:disabled) {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Message Button */
+.up-message-btn {
+    background: linear-gradient(135deg, #0068ff 0%, #00a8ff 100%);
+    color: #fff;
+    flex: 1;
+}
+
+.up-message-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 104, 255, 0.4);
+}
+
+/* Friend Button with Options */
+.up-friend-options-wrapper {
+    position: relative;
+}
+
+.up-friend-btn {
+    background: #f3f4f6;
+    color: #1c1e21;
+}
+
+.up-friend-btn:hover {
+    background: #e5e7eb;
+}
+
+.up-friend-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    min-width: 180px;
+    z-index: 20;
+}
+
+.up-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 18px;
+    border: none;
+    background: none;
+    font-size: 15px;
+    font-weight: 500;
+    color: #1c1e21;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.up-dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+.up-unfriend-option {
+    color: #dc2626;
+}
+
+.up-unfriend-option:hover {
+    background: #fee2e2;
+}
+
+/* ===== Action Spinner ===== */
+.up-action-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: upSpin 0.8s linear infinite;
+}
+
+.up-cancel-btn .up-action-spinner,
+.up-reject-btn .up-action-spinner,
+.up-friend-btn .up-action-spinner {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #6b7280;
+}
+
+/* ===== Avatar Preview Modal ===== */
+.up-avatar-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.up-avatar-preview-container {
+    position: relative;
+    max-width: 500px;
+    width: 100%;
+}
+
+.up-preview-close-btn {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.up-preview-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.up-avatar-preview-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* ===== Confirm Modal ===== */
+.up-confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    padding: 20px;
+}
+
+.up-confirm-modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+.up-confirm-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    background: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #dc2626;
+}
+
+.up-confirm-modal h3 {
+    margin: 0 0 10px;
+    font-size: 20px;
+    color: #1c1e21;
+}
+
+.up-confirm-modal p {
+    margin: 0 0 24px;
+    font-size: 15px;
+    color: #65676b;
+    line-height: 1.5;
+}
+
+.up-confirm-modal strong {
+    color: #1c1e21;
+}
+
+.up-confirm-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.up-confirm-cancel-btn {
+    flex: 1;
+    padding: 14px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.up-confirm-cancel-btn:hover {
+    background: #e5e7eb;
+}
+
+.up-confirm-unfriend-btn {
+    flex: 1;
+    padding: 14px;
+    background: #dc2626;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.up-confirm-unfriend-btn:hover {
+    background: #b91c1c;
+}
+
+.up-confirm-unfriend-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+    .up-cover-image {
+        height: 160px;
+    }
+    
+    .up-avatar-img {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .up-avatar-container {
+        margin-top: -60px;
+    }
+    
+    .up-display-name {
+        font-size: 22px;
+    }
+    
+    .up-action-btn {
+        padding: 12px 20px;
+        font-size: 14px;
+        min-width: 140px;
+    }
+    
+    .up-action-buttons {
+        flex-direction: column;
+    }
+    
+    .up-action-btn {
+        width: 100%;
+        max-width: none;
+    }
+}

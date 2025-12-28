@@ -27,7 +27,31 @@ export const uploadCover = async (file, userId) => {
   const res = await api.post("/api/user/uploads/cover", formData);
   return res.data.result;
 };
-
+export const editInfor=async (userId,data)=>{
+ const res=await api.put("/api/user/editInfor",data,{
+  params:{
+    userId:userId
+  }
+ })
+ return res.data.result;
+}
+export const changePass=async (userId,data)=>{
+ const res=await api.put("/api/user/editPass",data,{
+  params:{
+    userId:userId
+  }
+ })
+ return res.data.result;
+}
+export const seenProfile = async (meId, otherId) => {
+  const res = await api.get("/api/user/seen", {
+    params: {
+      meId: meId,
+      otherId: otherId
+    }
+  });
+  return res.data.result;
+};
 
 
 

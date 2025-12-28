@@ -64,6 +64,19 @@
   object-fit: cover;
 }
 
+/* Clickable Avatar */
+.friend-avatar.clickable-avatar {
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.friend-avatar.clickable-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.25);
+  border-color: #0068ff;
+}
+
 .online-dot {
   position: absolute;
   bottom: 2px;

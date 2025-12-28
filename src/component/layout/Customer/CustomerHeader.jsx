@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { BiSearch, BiPlus, BiUserPlus, BiUserMinus } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
 import { useUser } from "../../../context/UserContext";
 import { sendFriendRequest, unFriend } from "../../../api/service/friend";
 import { sendSocketData } from "../../../api/websocket";
 import { search as searchUsers } from "../../../api/service/userService";
+import { getAvatarUrl } from "../../../utils/avatarHelper";
 import UserDropdown from "../../UserDropdown/UserDropdown";
 import "./CustomerHeader.css";
 
 function CustomerHeader({ onProfileClick }) {
+    const navigate = useNavigate();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -110,6 +113,13 @@ function CustomerHeader({ onProfileClick }) {
         }
     };
 
+    // Click vào avatar để xem profile
+    const handleAvatarClick = (userId) => {
+        setOpen(false);
+        setQuery("");
+        navigate(`/user/${userId}`);
+    };
+
     return (
         <div className="header-container">
             
@@ -140,7 +150,16 @@ function CustomerHeader({ onProfileClick }) {
                             ) : results.length > 0 ? (
                                 results.map((user) => (
                                     <div key={user.id} className="search-dropdown-item">
-                                      
+                                        <div 
+                                            className="search-avatar-wrapper"
+                                            onClick={() => handleAvatarClick(user.id)}
+                                        >
+                                            <img 
+                                                src={getAvatarUrl(user.avatarUrl)} 
+                                                alt={user.firstname}
+                                                className="search-avatar"
+                                            />
+                                        </div>
 
                                         <div className="search-info">
                                             <div className="search-name">
