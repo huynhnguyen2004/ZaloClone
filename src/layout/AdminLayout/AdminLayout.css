@@ -1,0 +1,168 @@
+/* ========================================
+   Admin Layout Styles
+   Layout: Sidebar (trái) | Content (phải)
+   ======================================== */
+
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+/* Sidebar Wrapper - Bên trái */
+.admin-layout .admin-sidebar-wrapper {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
+/* Main Content - Bên phải */
+.admin-layout .admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin-left: 260px;
+  transition: margin-left 0.3s ease;
+  position: relative;
+}
+
+/* Content Area - Chứa Outlet */
+.admin-layout .admin-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: #f1f5f9;
+}
+
+/* Mobile Menu Button */
+.admin-layout .admin-mobile-menu-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: #ffffff;
+  border-radius: 12px;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  transition: all 0.2s ease;
+}
+
+.admin-layout .admin-mobile-menu-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  transform: scale(1.05);
+}
+
+/* Mobile Overlay */
+.admin-layout .admin-mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  backdrop-filter: blur(4px);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-layout .admin-main {
+    margin-left: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-layout .admin-main {
+    margin-left: 0;
+  }
+
+  .admin-layout .admin-sidebar-wrapper {
+    transform: translateX(-100%);
+  }
+
+  .admin-layout .admin-sidebar-wrapper.mobile-open {
+    transform: translateX(0);
+  }
+
+  .admin-layout .admin-mobile-overlay {
+    display: block;
+  }
+
+  .admin-layout .admin-content {
+    padding: 16px;
+    padding-top: 70px; /* Space for mobile menu button */
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-layout .admin-content {
+    padding: 12px;
+    padding-top: 70px;
+  }
+
+  .admin-layout .admin-mobile-menu-btn {
+    top: 12px;
+    left: 12px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .admin-layout {
+    background: #0f172a;
+  }
+
+  .admin-layout .admin-content {
+    background: #0f172a;
+  }
+
+  .admin-layout .admin-mobile-menu-btn {
+    background: #1e293b;
+    color: #94a3b8;
+  }
+
+  .admin-layout .admin-mobile-menu-btn:hover {
+    background: #334155;
+    color: #f1f5f9;
+  }
+}
+
+/* Scrollbar styling */
+.admin-layout .admin-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-layout .admin-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-layout .admin-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.admin-layout .admin-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .admin-layout .admin-content::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+
+  .admin-layout .admin-content::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+}

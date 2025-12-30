@@ -52,7 +52,34 @@ export const seenProfile = async (meId, otherId) => {
   });
   return res.data.result;
 };
+export const getAllCustomer=async(page,size)=>{
+  const res=await api.get("/api/user/customer",null,{
+    params:{
+      page:page,
+      size:size
+    }
+  }
 
+  )
+}
+export const lockCustomer=async(userId)=>{
+  const res=await api.put("/api/user/customer/lock",null,{
+    params:{
+      userId:userId
+    }
+  }
+
+  )
+}
+export const unlockCustomer=async(userId)=>{
+  const res=await api.put("/api/user/customer/unlock",null,{
+    params:{
+      userId:userId
+    }
+  }
+
+  )
+}
 
 
 
