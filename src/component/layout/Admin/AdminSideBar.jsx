@@ -17,6 +17,7 @@ import {
 } from "react-icons/md";
 import { SiZalo } from "react-icons/si";
 import { useUser } from "../../../context/UserContext";
+import logo from "../../../asset/logo.png";
 
 function AdminSideBar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -75,7 +76,7 @@ function AdminSideBar() {
       <div className="admin-sidebar-logo">
         <div className="admin-logo-container">
           <div className="admin-logo-icon">
-            <SiZalo size={28} />
+             <img src={logo} alt="Connect illustration" />
           </div>
           <AnimatePresence>
             {!isCollapsed && (
@@ -86,7 +87,7 @@ function AdminSideBar() {
                 exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <h1>Zalo Admin</h1>
+                <h1>Admin</h1>
                 <span>Dashboard</span>
               </motion.div>
             )}
