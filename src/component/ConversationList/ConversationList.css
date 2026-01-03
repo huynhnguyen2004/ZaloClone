@@ -108,6 +108,34 @@
   border-color: #e7f3ff;
 }
 
+/* ===== Last Online Badge - Trong Avatar giống Messenger ===== */
+.last-online-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #ffffff;
+  color: #65676b;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: 1.5px solid #e4e6eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  line-height: 1.2;
+  min-width: 20px;
+  text-align: center;
+}
+
+.conversation-item:hover .last-online-badge {
+  background: #f0f2f5;
+}
+
+.conversation-item.active .last-online-badge {
+  border-color: #c2dbf7;
+  background: #e7f3ff;
+}
+
 /* ===== Info Section ===== */
 .conversation-info {
   flex: 1;

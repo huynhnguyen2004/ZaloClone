@@ -83,6 +83,36 @@ export default function ConversationList() {
     return msg.length > maxLength ? msg.substring(0, maxLength) + "..." : msg;
   };
 
+  // 🔥 Format thời gian hoạt động cuối (lastOnline) - ngắn gọn cho badge
+  const formatLastOnline = (lastOnlineDate) => {
+    if (!lastOnlineDate) return "";
+
+    const date = new Date(lastOnlineDate);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    // Vừa mới online (dưới 1 phút)
+    if (diffMins < 1) return "1ph";
+
+    // Trong vòng 1 giờ - hiển thị số phút
+    if (diffMins < 60) return `${diffMins}ph`;
+
+    // Trong vòng 24 giờ - hiển thị số giờ
+    if (diffHours < 24) return `${diffHours}g`;
+
+    // Trong tuần - hiển thị số ngày
+    if (diffDays < 7) return `${diffDays}ng`;
+
+    // Lâu hơn - hiển thị tuần
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}t`;
+
+    // Quá lâu - không hiển thị
+    return "";
+  };
+
   // 🔥 Click vào conversation
   const handleClick = (conv) => {
     const friendData = {
@@ -90,6 +120,7 @@ export default function ConversationList() {
       friendName: conv.friendName || "Unknown",
       avatarUrl: conv.friendAvatar,
       online: conv.online,
+      lastOnline: conv.lastOnline,
       lastReadMessageContent:conv.lastReadMessageContent,
       userIdLastMessage:conv.userIdLastMessage
     };
@@ -167,8 +198,16 @@ export default function ConversationList() {
                 onClick={(e) => handleAvatarClick(e, conv.friendId)}
                 title="Xem thông tin"
               />
-              {/* Kiểm tra online realtime */}
-              {(isUserOnline(conv.friendId) || conv.online) && <span className="online-indicator"></span>}
+              {/* Online: chấm xanh | Offline: badge thời gian */}
+              {(isUserOnline(conv.friendId) || conv.online) ? (
+                <span className="online-indicator"></span>
+              ) : (
+                conv.lastOnline && formatLastOnline(conv.lastOnline) && (
+                  <span className="last-online-badge">
+                    {formatLastOnline(conv.lastOnline)}
+                  </span>
+                )
+              )}
             </div>
 
             {/* Info */}

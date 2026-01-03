@@ -21,6 +21,36 @@ export default function ChatWindow({ onCloseChat }) {
   // 🔥 Kiểm tra trạng thái online realtime
   const isFriendOnline = isUserOnline(activeChat?.friendId) || activeChat?.online;
 
+  // 🔥 Format thời gian hoạt động cuối - giống Messenger
+  const formatLastOnline = (lastOnlineDate) => {
+    if (!lastOnlineDate) return "Ngoại tuyến";
+
+    const date = new Date(lastOnlineDate);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    // Vừa mới online (dưới 1 phút)
+    if (diffMins < 1) return "Vừa truy cập";
+
+    // Trong vòng 1 giờ
+    if (diffMins < 60) return `Hoạt động ${diffMins} phút trước`;
+
+    // Trong vòng 24 giờ
+    if (diffHours < 24) return `Hoạt động ${diffHours} giờ trước`;
+
+    // Hôm qua
+    if (diffDays === 1) return "Hoạt động hôm qua";
+
+    // Trong tuần (2-7 ngày)
+    if (diffDays < 7) return `Hoạt động ${diffDays} ngày trước`;
+
+    // Lâu hơn
+    return "Ngoại tuyến";
+  };
+
   useEffect(() => {
     if (endRef.current) endRef.current.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -99,8 +129,18 @@ export default function ChatWindow({ onCloseChat }) {
 
         <div className="chat-info">
           <h3 className="chat-title">{activeChat?.friendName} {activeChat?.friendlastName}</h3>
-          <span className={`chat-status ${isFriendOnline ? "online" : ""}`}>
-            {isFriendOnline ? "Đang hoạt động" : "Ngoại tuyến"}
+          <span className={`chat-status ${isFriendOnline ? "online" : "offline"}`}>
+            {isFriendOnline ? (
+              <>
+                <span className="status-dot online"></span>
+                Đang hoạt động
+              </>
+            ) : (
+              <>
+                <span className="status-dot offline"></span>
+                {formatLastOnline(activeChat?.lastOnline)}
+              </>
+            )}
           </span>
         </div>
 
