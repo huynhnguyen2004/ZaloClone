@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { login, register } from "../../api/service/authService";
 import "./AuthPage.css";
 import logo from "../../asset/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const initialFormState = {
   firstname: "",
@@ -11,20 +12,36 @@ const initialFormState = {
   phone: "",
   password: "",
   confirmPassword: "",
+  birthday: "",
+  gender: 0,
 };
-
+const SITE_KEY = "6LchvTUsAAAAAHygJx9houBHwGhQvHAtOf_yWUa3";
 function AuthPage() {
   const [mode, setMode] = useState("login");
   const [formData, setFormData] = useState(initialFormState);
   const [rememberMe, setRememberMe] = useState(false);
   const [status, setStatus] = useState({ type: "", message: "" });
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [failed, setFailed] = useState(0);
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef(null);
+
   const navigate = useNavigate();
   const { fetchCurrentUser } = useUser();
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (!status?.message) return;
+
+    const timer = setTimeout(() => {
+      setStatus({ type: "", message: "" });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [status]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -35,16 +52,26 @@ function AuthPage() {
       return;
     }
 
+    // Kiểm tra captcha khi đăng nhập thất bại >= 3 lần
+    if (mode === "login" && failed >= 3 && !captchaToken) {
+      setStatus({ type: "error", message: "Vui lòng xác minh captcha" });
+      return;
+    }
+
     try {
       setLoading(true);
       if (mode === "login") {
         const { data } = await login({
           phone: formData.phone,
           password: formData.password,
+          captchaToken: failed >= 3 ? captchaToken : null,
         });
 
         const token = data?.result?.token;
         if (token) {
+          setFailed(0);
+          setCaptchaToken(null);
+
           sessionStorage.setItem("token", token);
         }
         if (token) {
@@ -63,13 +90,14 @@ function AuthPage() {
             navigate("/admin");
           }
         }
-
       } else {
         await register({
           phone: formData.phone,
           password: formData.password,
           firstname: formData.firstname,
           lastname: formData.lastname,
+          birthday: formData.birthday,
+          gender: parseInt(formData.gender),
         });
         setStatus({
           type: "success",
@@ -80,10 +108,16 @@ function AuthPage() {
       setFormData(initialFormState);
     } catch (error) {
       const apiMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Có lỗi xảy ra, vui lòng thử lại.";
+        error.response?.data?.messenge || "Có lỗi xảy ra, vui lòng thử lại.";
       setStatus({ type: "error", message: apiMessage });
+
+      if (mode === "login") {
+        setFailed((prev) => prev + 1);
+      }
+      if (captchaRef.current) {
+        captchaRef.current.reset();
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -131,7 +165,7 @@ function AuthPage() {
             </p>
           </div>
 
-          {status.message && (
+          {status?.message && (
             <div className={`auth__alert ${status.type}`}>{status.message}</div>
           )}
 
@@ -185,17 +219,66 @@ function AuthPage() {
             </label>
 
             {mode === "register" && (
-              <label>
-                Xác nhận mật khẩu
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                />
-              </label>
+              <>
+                <label>
+                  Xác nhận mật khẩu
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+
+                <label>
+                  Ngày sinh
+                  <input
+                    type="date"
+                    name="birthday"
+                    value={formData.birthday}
+                    onChange={handleChange}
+                    required
+                  />
+                </label>
+
+                <div className="auth__gender">
+                  <span>Giới tính</span>
+                  <div className="auth__gender-options">
+                    <label>
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={0}
+                        checked={parseInt(formData.gender) === 0}
+                        onChange={handleChange}
+                      />
+                      Nam
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={1}
+                        checked={parseInt(formData.gender) === 1}
+                        onChange={handleChange}
+                      />
+                      Nữ
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="gender"
+                        value={2}
+                        checked={parseInt(formData.gender) === 2}
+                        onChange={handleChange}
+                      />
+                      Khác
+                    </label>
+                  </div>
+                </div>
+              </>
             )}
 
             {mode === "login" && (
@@ -214,6 +297,15 @@ function AuthPage() {
               </div>
             )}
 
+            {mode === "login" && failed >= 3 && (
+              <div style={{ marginTop: "12px" }}>
+                <ReCAPTCHA
+                  ref={captchaRef}
+                  sitekey={SITE_KEY}
+                  onChange={(token) => setCaptchaToken(token)}
+                />
+              </div>
+            )}
             <button type="submit" className="auth__submit" disabled={loading}>
               {loading
                 ? "Đang xử lý..."
@@ -237,7 +329,6 @@ function AuthPage() {
             <button type="button" aria-label="Facebook sign in">
               <img
                 src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg"
-
                 alt="Facebook"
               />
             </button>

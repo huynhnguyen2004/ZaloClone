@@ -2,7 +2,9 @@ import axios from "axios";
 
 // Địa chỉ API backend của bạn
 export const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL||"http://localhost:8080";
+   process.env.REACT_APP_API_BASE_URL||"http://localhost:8080" ;
+
+
 
 
 const getToken = () => {
@@ -29,19 +31,32 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Nếu backend trả về 401 => token sai hoặc hết hạn
-    if (error.response && error.response.status === 401) {
-      console.log("Token hết hạn — tự động đăng xuất!");
+     if (!error.response) {
+      return Promise.reject(error);
+    }
 
-      // Xoá token
+    const status = error.response.status;
+
+    // 🔥 TOKEN HẾT HẠN / KHÔNG HỢP LỆ
+    if (status === 401) {
+      console.log("Token hết hạn hoặc không hợp lệ");
+
       sessionStorage.removeItem("token");
+      window.location.href = "/";
+    }
 
-      // Điều hướng về trang login
+    // 🔥 USER BỊ ADMIN KHÓA
+    if (status === 403) {
+      console.log("Tài khoản đã bị khóa");
+
+      alert("Tài khoản của bạn đã bị khóa!");
+      sessionStorage.removeItem("token");
       window.location.href = "/";
     }
 
     return Promise.reject(error);
   }
+  
 )
 
 

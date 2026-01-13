@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 import { getCurrentUser } from "../api/service/userService";
 import { logout as apiLogout } from "../api/service/authService";
-import { connectWebSocket, disconnectWebSocket } from "../api/websocket";
+import { connectWebSocket, disconnectWebSocket, sendUserOffline, sendUserOfflineBeacon, sendUserOnline } from "../api/websocket";
 import { getAllFriendSend, getAllFriend } from "../api/service/friend";
 
 const UserContext = createContext();
@@ -21,6 +21,7 @@ export const UserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [friendRequests, setFriendRequests] = useState([]);
   const [friends, setFriends] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Lưu trữ danh sách userId online
 
   const wsInitializedRef = useRef(false);
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export const UserProvider = ({ children }) => {
   ============================ */
   const fetchCurrentUser = useCallback(async () => {
     const token = sessionStorage.getItem("token");
-    if (!token) return;
+    if (!token) navigate("/");
 
     try {
       const res = await getCurrentUser();
@@ -113,9 +114,59 @@ export const UserProvider = ({ children }) => {
         fetchFriendRequests(currentUser.id);
       },
 
-    
+      // Xử lý thay đổi trạng thái online/offline
+      onPresenceChange: (presenceData) => {
+        const { userId, online } = presenceData;
+        setOnlineUsers((prev) => {
+          const newSet = new Set(prev);
+          if (online) {
+            newSet.add(userId);
+          } else {
+            newSet.delete(userId);
+          }
+          return newSet;
+        });
+      },
+
+      // Callback khi WebSocket kết nối thành công
+      onConnected: (userId) => {
+        console.log("🟢 WebSocket connected, setting user online");
+        // Cập nhật currentUser.online = true
+        setCurrentUser((prev) => prev ? { ...prev, online: true } : prev);
+        // Thêm chính mình vào danh sách online
+        setOnlineUsers((prev) => new Set(prev).add(userId));
+      },
     });
 
+    // Xử lý khi user đóng tab/browser
+    const handleBeforeUnload = () => {
+      if (currentUser?.id) {
+        // Sử dụng sendBeacon để đảm bảo gửi được khi đóng tab
+        sendUserOfflineBeacon(currentUser.id);
+      }
+    };
+
+    // Xử lý khi user chuyển tab (visibility change)
+    const handleVisibilityChange = () => {
+      if (!currentUser?.id) return;
+      
+      if (document.visibilityState === "hidden") {
+        // User rời khỏi tab - có thể đánh dấu idle/away
+        console.log("👁️ Tab hidden - user may be away");
+      } else if (document.visibilityState === "visible") {
+        // User quay lại tab - gửi lại online
+        sendUserOnline(currentUser.id);
+        console.log("👁️ Tab visible - user is back");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [currentUser, fetchFriends, fetchFriendRequests]);
 
 
@@ -123,6 +174,13 @@ export const UserProvider = ({ children }) => {
               LOGOUT
   ============================ */
   const logout = async () => {
+    // Gửi offline status trước khi logout và chờ gửi xong
+    if (currentUser?.id) {
+      sendUserOffline(currentUser.id);
+      // Chờ một chút để message được gửi đi trước khi disconnect
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     sessionStorage.removeItem("token");
     disconnectWebSocket();
 
@@ -131,6 +189,7 @@ export const UserProvider = ({ children }) => {
     setCurrentUser(null);
     setFriends([]);
     setFriendRequests([]);
+    setOnlineUsers(new Set());
 
     wsInitializedRef.current = false;
 
@@ -138,18 +197,28 @@ export const UserProvider = ({ children }) => {
   };
 
   /* ============================
+        CHECK IF USER IS ONLINE
+  ============================ */
+  const isUserOnline = useCallback((userId) => {
+    return onlineUsers.has(userId);
+  }, [onlineUsers]);
+
+  /* ============================
               VALUE
   ============================ */
   const value = {
     currentUser,
     friends,
+    setFriends,
     friendRequests,
+    onlineUsers,
 
     fetchCurrentUser,
     fetchFriends,
     fetchFriendRequests,
 
     logout,
+    isUserOnline,
 
     removeFriendRequest: (id) =>
       setFriendRequests((prev) => prev.filter((r) => r.id !== id)),

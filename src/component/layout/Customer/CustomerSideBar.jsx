@@ -11,16 +11,23 @@ import {
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
 import { useUser } from "../../../context/UserContext";
+import { useChat } from "../../../context/ChatContext";
+import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
 
 function CustomerSideBar({ onTabChange }) {
     const [activeTab, setActiveTab] = useState("chats");
     const { currentUser, friendRequests } = useUser();
+    const { unreadCount, clearUnread } = useChat();
 
     const handleTabClick = (tabName) => {
         setActiveTab(tabName);
         if (onTabChange) {
             onTabChange(tabName);
+        }
+        // Xóa thông báo khi click vào tab tin nhắn
+        if (tabName === "chats") {
+            clearUnread();
         }
     };
 
@@ -29,28 +36,14 @@ function CustomerSideBar({ onTabChange }) {
             id: "chats",
             icon: BiMessageRounded,
             title: "Tin nhắn",
-            notification: 3
+            notification: unreadCount > 0 ? unreadCount : null,
         },
         {
             id: "contacts",
             icon: HiOutlineUsers,
             title: "Danh bạ"
-        },
-        {
-            id: "timeline",
-            icon: MdOutlineArticle,
-            title: "Nhật ký"
-        },
-        {
-            id: "groups",
-            icon: BiGroup,
-            title: "Nhóm"
-        },
-        {
-            id: "saved",
-            icon: BiBookmark,
-            title: "Đã lưu"
         }
+        
     ];
 
     const toggleRequestPanel = () => {
@@ -66,13 +59,7 @@ function CustomerSideBar({ onTabChange }) {
             {/* User Avatar */}
             <div className="sidebar-user">
                 <div className="user-avatar-sidebar">
-                    {currentUser?.avatarUrl ? (
-                        <img src={currentUser.avatarUrl} alt="Avatar" />
-                    ) : (
-                        <div className="default-avatar-sidebar">
-                            {currentUser?.firstname?.charAt(0) || "U"}
-                        </div>
-                    )}
+                    <img src={getAvatarUrl(currentUser?.avatarUrl)} alt="Avatar" />
                 </div>
             </div>
 
@@ -115,15 +102,7 @@ function CustomerSideBar({ onTabChange }) {
                 </button>
             </div>
 
-            {/* Settings */}
-            <div className="sidebar-bottom">
-                <button 
-                    className="nav-item"
-                    title="Cài đặt"
-                >
-                    <BiCog className="nav-icon" />
-                </button>
-            </div>
+          
         </div>
     );
 }

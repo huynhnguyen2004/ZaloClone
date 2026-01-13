@@ -6,12 +6,13 @@ export const sendFriendRequest = async (senderId, receiverId) => {
 };
 
 // Nếu BE expects requestId in body for accept
-export const acceptFriendRequest = async (id) => {
-  // adjust if backend route is /api/friend/accept/{id}
-  return api.post("/api/friendrequest/accepted", { id});
-  // OR if backend uses path var:
-  // return api.post(`/api/friend/accept/${requestId}`);
+export const acceptFriend = async (meId, otherId) => {
+  const res = await api.put("/api/friendrequest/accept", null, {
+    params: { meId, otherId }
+  });
+  return res.data.result;
 };
+
 export const getAllFriendSend=async(params)=>{
   return api.get("/api/friendrequest",{params})
 }
@@ -19,7 +20,23 @@ export const getAllFriend=async(params)=>{
   return api.get("/api/friends",{params})
 }
 
-export const declineFriendRequest = async (requestId) => {
-  return api.post("/api/friendrequest/decline", { requestId });
-  // OR: return api.post(`/api/friend/decline/${requestId}`);
+
+export const unFriend = async (params) => {
+  return api.delete("/api/friends/unfriend", {params});
 };
+export const unRequestFriend=async (meId,userId)=>{
+  return api.put("/api/friendrequest/cancele",
+    null,
+    {params:{
+      meId:meId,
+      userId:userId
+    }});
+}
+export const rejectFriendRequest=async (meId,userId)=>{
+  return api.put("/api/friendrequest/reject",
+    null,
+    {params:{
+      meId:meId,
+      userId:userId
+    }});
+}

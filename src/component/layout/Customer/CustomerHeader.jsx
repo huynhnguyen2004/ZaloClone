@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { BiSearch, BiPlus, BiUserPlus } from "react-icons/bi";
+import { useNavigate } from "react-router-dom";
+import { BiSearch, BiPlus, BiUserPlus, BiUserMinus } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
 import { useUser } from "../../../context/UserContext";
-import { sendFriendRequest } from "../../../api/service/friend";
+import { sendFriendRequest, unFriend } from "../../../api/service/friend";
 import { sendSocketData } from "../../../api/websocket";
 import { search as searchUsers } from "../../../api/service/userService";
+import { getAvatarUrl } from "../../../utils/avatarHelper";
 import UserDropdown from "../../UserDropdown/UserDropdown";
 import "./CustomerHeader.css";
 
 function CustomerHeader({ onProfileClick }) {
+    const navigate = useNavigate();
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
-    const { currentUser } = useUser();
-    const [sendingIds, setSendingIds] = useState([]);
 
+    const [sendingIds, setSendingIds] = useState([]);
+    const [removingIds, setRemovingIds] = useState([]);
+    const {currentUser} =useUser();
     useEffect(() => {
         if (!query || query.trim().length < 2) {
             setResults([]);
@@ -26,7 +30,9 @@ function CustomerHeader({ onProfileClick }) {
         const handle = setTimeout(async () => {
             try {
                 setLoading(true);
-                const data = await searchUsers({ key: query.trim() });
+                const data = await searchUsers({
+                    userId:currentUser.id ,
+                    key: query.trim() });
                 setResults(Array.isArray(data) ? data : []);
                 setOpen(true);
             } catch (err) {
@@ -78,6 +84,42 @@ function CustomerHeader({ onProfileClick }) {
         }
     };
 
+    const handleRemoveFriend = async (friendUser) => {
+        if (!currentUser?.id) return;
+
+        const friendId = friendUser.id;
+
+        if (removingIds.includes(friendId)) return;
+
+        setRemovingIds((prev) => [...prev, friendId]);
+
+        try {
+            await unFriend({user1Id:currentUser.id, 
+                user2Id:friendId});
+
+            // Cập nhật lại kết quả tìm kiếm
+            setResults((prev) =>
+                prev.map((u) =>
+                    u.id === friendId ? { ...u, isFriend: false } : u
+                )
+            );
+
+        } catch (err) {
+            console.error("Remove friend error", err);
+        } finally {
+            setRemovingIds((prev) =>
+                prev.filter((i) => i !== friendId)
+            );
+        }
+    };
+
+    // Click vào avatar để xem profile
+    const handleAvatarClick = (userId) => {
+        setOpen(false);
+        setQuery("");
+        navigate(`/user/${userId}`);
+    };
+
     return (
         <div className="header-container">
             
@@ -108,7 +150,16 @@ function CustomerHeader({ onProfileClick }) {
                             ) : results.length > 0 ? (
                                 results.map((user) => (
                                     <div key={user.id} className="search-dropdown-item">
-                                      
+                                        <div 
+                                            className="search-avatar-wrapper"
+                                            onClick={() => handleAvatarClick(user.id)}
+                                        >
+                                            <img 
+                                                src={getAvatarUrl(user.avatarUrl)} 
+                                                alt={user.firstname}
+                                                className="search-avatar"
+                                            />
+                                        </div>
 
                                         <div className="search-info">
                                             <div className="search-name">
@@ -118,13 +169,26 @@ function CustomerHeader({ onProfileClick }) {
                                         </div>
 
                                         <div className="search-action">
-                                            <button
-                                                className="search-add-btn"
-                                                onClick={() => handleAddFriend(user)}
-                                                disabled={sendingIds.includes(user.id)}
-                                            >
-                                                <BiUserPlus />
-                                            </button>
+                                            
+                                            {user.isFriend ? (
+                                                <button
+                                                    className="search-remove-btn"
+                                                    onClick={() => handleRemoveFriend(user)}
+                                                    disabled={removingIds.includes(user.id)}
+                                                    title="Hủy bạn bè"
+                                                >
+                                                    <BiUserMinus />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="search-add-btn"
+                                                    onClick={() => handleAddFriend(user)}
+                                                    disabled={sendingIds.includes(user.id)}
+                                                    title="Thêm bạn bè"
+                                                >
+                                                    <BiUserPlus />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))

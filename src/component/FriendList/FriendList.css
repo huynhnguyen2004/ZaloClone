@@ -64,6 +64,19 @@
   object-fit: cover;
 }
 
+/* Clickable Avatar */
+.friend-avatar.clickable-avatar {
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.friend-avatar.clickable-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.25);
+  border-color: #0068ff;
+}
+
 .online-dot {
   position: absolute;
   bottom: 2px;
@@ -87,6 +100,43 @@
   margin: 0;
   font-size: 13px;
   color: #666;
+}
+
+
+/* ===== Unfriend Button ===== */
+.unfriend-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #ffd0d0;
+  background: #fff4f4;
+  color: #ff4444;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+  opacity: 0;
+}
+
+.friend-card:hover .unfriend-btn {
+  opacity: 1;
+}
+
+.unfriend-btn:hover {
+  background: #ff4444;
+  color: #fff;
+  border-color: #ff4444;
+  box-shadow: 0 3px 8px rgba(255, 68, 68, 0.3);
+  transform: scale(1.1);
+}
+
+.unfriend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 

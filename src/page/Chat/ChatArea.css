@@ -120,10 +120,9 @@
 .chat-list-content {
     flex: 1;
     display: flex;
-    align-items: center;       /* căn giữa theo chiều dọc */
-    justify-content: center;   /* căn giữa theo chiều ngang */
-    padding: 40px 24px;
-    height: 100%;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 
@@ -313,6 +312,7 @@
     text-align: center;
     color: #8a8d91;
     font-size: 14px;
+   
 }
 
 .empty-requests.modern {
@@ -325,6 +325,7 @@
     padding: 24px;
     border: 1px dashed #c7d2fe;
     color: #475569;
+    
 }
 
 .empty-requests.modern svg {
@@ -353,6 +354,7 @@
     align-items: center;
     justify-content: center;   /* rất quan trọng — căn giữa nội dung */
     gap: 16px;
+    
 }
 
 .empty-icon {
