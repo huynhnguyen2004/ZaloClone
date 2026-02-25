@@ -15,6 +15,7 @@ const getToken = () => {
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000, // 10 giây
+  withCredentials:true
 });
 
 // 🟦 INTERCEPTOR GỬI TOKEN LÊN SERVER

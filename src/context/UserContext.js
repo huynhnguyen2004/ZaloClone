@@ -26,24 +26,12 @@ export const UserProvider = ({ children }) => {
   const wsInitializedRef = useRef(false);
   const navigate = useNavigate();
 
-  /** Chuẩn hóa request */
-  const normalizeRequest = (d) => ({
-    id: d.id,
-    senderId: d.senderId,
-    receiverId: d.receiverId,
-    senderName: d.senderName,
-    phone: d.phone ?? null,
-    createdAt: d.createdAt,
-    status: d.status,
-    senderAvatarUrl: d.senderAvatarUrl || d.avatar || null,
-  });
-
   /* ============================
         GET CURRENT USER
   ============================ */
   const fetchCurrentUser = useCallback(async () => {
     const token = sessionStorage.getItem("token");
-    if (!token) navigate("/");
+    if (!token) return; 
 
     try {
       const res = await getCurrentUser();
@@ -103,9 +91,8 @@ export const UserProvider = ({ children }) => {
       userId: currentUser.id,
 
       onReceiveRequest: (data) => {
-        const req = normalizeRequest(data);
         setFriendRequests((prev) =>
-          prev.some((x) => x.id === req.id) ? prev : [req, ...prev]
+          prev.some((x) => x.id === data.id) ? prev : [data, ...prev]
         );
       },
 
@@ -208,6 +195,7 @@ export const UserProvider = ({ children }) => {
   ============================ */
   const value = {
     currentUser,
+    setCurrentUser,
     friends,
     setFriends,
     friendRequests,
