@@ -67,7 +67,7 @@ function AuthPage() {
           captchaToken: failed >= 3 ? captchaToken : null,
         });
 
-        const token = data?.result?.token;
+        const token = data?.result?.accessToken;
         if (token) {
           setFailed(0);
           setCaptchaToken(null);
