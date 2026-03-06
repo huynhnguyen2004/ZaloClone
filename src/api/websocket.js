@@ -72,7 +72,9 @@ export const connectWebSocket = ({
   const socketUrl = `${base}/ws${token ? `?token=${token}` : ""}`;
 
   stompClient = new Client({
-    webSocketFactory: () => new SockJS(socketUrl),
+    webSocketFactory: () => new SockJS(socketUrl, null, { 
+      withCredentials: true 
+    }),
     reconnectDelay: 1000,
     connectHeaders: token
       ? { Authorization: `Bearer ${token}` }

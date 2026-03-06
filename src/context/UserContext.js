@@ -43,13 +43,20 @@ export const UserProvider = ({ children }) => {
   ============================ */
   const fetchCurrentUser = useCallback(async () => {
     const token = sessionStorage.getItem("token");
-    if (!token) navigate("/");
+    if (!token) {
+      return;
+        navigate("/");
+    }
+      
 
     try {
       const res = await getCurrentUser();
-      setCurrentUser(res?.result ?? res);
+      const user = res?.result ?? res;
+      setCurrentUser(user);
+      return user;
     } catch (err) {
       console.error("Lỗi lấy user:", err);
+      return null;
     }
   }, []);
 
@@ -184,7 +191,9 @@ export const UserProvider = ({ children }) => {
     sessionStorage.removeItem("token");
     disconnectWebSocket();
 
-    await apiLogout(currentUser?.id);
+    await apiLogout();
+   
+    
 
     setCurrentUser(null);
     setFriends([]);

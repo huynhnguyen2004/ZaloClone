@@ -76,18 +76,16 @@ function AuthPage() {
         }
         if (token) {
           try {
-            await fetchCurrentUser();
+            const user = await fetchCurrentUser();
+            if (user) {
+              if (user.role === "Customer") {
+                navigate("/home");
+              } else {
+                navigate("/admin");
+              }
+            }
           } catch (error) {
             console.warn("Không thể fetch user sau login:", error);
-          }
-        }
-
-        const user = data?.result?.user;
-        if (user) {
-          if (user.role === "Customer") {
-            navigate("/home");
-          } else {
-            navigate("/admin");
           }
         }
       } else {
