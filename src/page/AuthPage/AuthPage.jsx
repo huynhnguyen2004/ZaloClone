@@ -22,7 +22,7 @@ function AuthPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [captchaToken, setCaptchaToken] = useState(null);
-  const [failed, setFailed] = useState(0);
+  const [showCaptcha, setShowCaptcha] = useState(false);
   const [loading, setLoading] = useState(false);
   const captchaRef = useRef(null);
 
@@ -53,7 +53,7 @@ function AuthPage() {
     }
 
     // Kiểm tra captcha khi đăng nhập thất bại >= 3 lần
-    if (mode === "login" && failed >= 3 && !captchaToken) {
+    if (mode === "login" && showCaptcha && !captchaToken) {
       setStatus({ type: "error", message: "Vui lòng xác minh captcha" });
       return;
     }
@@ -64,12 +64,12 @@ function AuthPage() {
         const { data } = await login({
           phone: formData.phone,
           password: formData.password,
-          captchaToken: failed >= 3 ? captchaToken : null,
+          captchaToken: showCaptcha ? captchaToken : null,
         });
 
         const token = data?.result?.accessToken;
         if (token) {
-          setFailed(0);
+        
           setCaptchaToken(null);
 
           sessionStorage.setItem("token", token);
@@ -85,6 +85,7 @@ function AuthPage() {
               }
             }
           } catch (error) {
+           
             console.warn("Không thể fetch user sau login:", error);
           }
         }
@@ -106,12 +107,16 @@ function AuthPage() {
       setFormData(initialFormState);
     } catch (error) {
       const apiMessage =
-        error.response?.data?.messenge || "Có lỗi xảy ra, vui lòng thử lại.";
-      setStatus({ type: "error", message: apiMessage });
+        error.response?.data?.message ;
+     
 
-      if (mode === "login") {
-        setFailed((prev) => prev + 1);
+      if(apiMessage=="CAPTCHA_REQUIRED"){
+        setShowCaptcha(true)
+      }else{
+         setStatus({ type: "error", message: apiMessage });
       }
+      
+      
       if (captchaRef.current) {
         captchaRef.current.reset();
         setCaptchaToken(null);
@@ -295,7 +300,7 @@ function AuthPage() {
               </div>
             )}
 
-            {mode === "login" && failed >= 3 && (
+            {mode === "login" && showCaptcha && (
               <div style={{ marginTop: "12px" }}>
                 <ReCAPTCHA
                   ref={captchaRef}
