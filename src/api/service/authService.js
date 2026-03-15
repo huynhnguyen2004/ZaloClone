@@ -2,3 +2,5 @@ import api from "../api";
 export const login=(data)=>api.post("/api/auth/login",data);
 export const register=(data)=>api.post("/api/auth/register",data);
 export const logout=()=>api.put("/api/auth/logout");
+export const sendOtp=(data)=>api.post("/api/auth/send-otp",data);
+export const verifyOtp=(data)=>api.post("/api/auth/verify-otp",data);
