@@ -28,6 +28,7 @@ function AuthPage() {
   const [captchaToken, setCaptchaToken] = useState(null);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [countdown, setCountdown] = useState(0);
   const [forgotStep, setForgotStep] = useState(1);
   const captchaRef = useRef(null);
@@ -35,6 +36,37 @@ function AuthPage() {
 
   const navigate = useNavigate();
   const { fetchCurrentUser } = useUser();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const bootstrapLogin = async () => {
+      try {
+        const user = await fetchCurrentUser();
+        if (!isMounted || !user) return;
+
+        if (user.role === "Customer") {
+          navigate("/home");
+        } else {
+          navigate("/admin");
+        }
+      } catch (err) {
+        if (isMounted) {
+          navigate("/");
+        }
+      } finally {
+        if (isMounted) {
+          setIsBootstrapping(false);
+        }
+      }
+    };
+
+    bootstrapLogin();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchCurrentUser, navigate]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -58,16 +90,20 @@ function AuthPage() {
     return () => clearTimeout(timer);
   }, [status]);
 
+  if (isBootstrapping) {
+    return null;
+  }
+
   // Handle OTP input
   const handleOtpChange = (index, value) => {
     if (value.length > 1) {
       value = value.slice(-1);
     }
-    
+
     const newOtp = formData.otp.split("");
     newOtp[index] = value;
     const otpString = newOtp.join("").slice(0, 6);
-    
+
     setFormData((prev) => ({ ...prev, otp: otpString }));
 
     // Auto focus next input
@@ -104,9 +140,7 @@ function AuthPage() {
       setRegisterStep(2);
       setCountdown(60);
     } catch (error) {
-      const apiMessage = error.response?.data?.message ;
-     
-      
+      const apiMessage = error.response?.data?.message;
       setStatus({ type: "error", message: apiMessage });
     } finally {
       setLoading(false);
@@ -127,7 +161,7 @@ function AuthPage() {
         otp: formData.otp,
         otpPurpose: "REGISTER",
       });
-      
+
       const verifyToken = data?.result?.verifyToken || data?.verifyToken;
       if (verifyToken) {
         sessionStorage.setItem("verifyRegisterTokenOtp", verifyToken);
@@ -147,7 +181,7 @@ function AuthPage() {
   // Resend OTP
   const handleResendOtp = async () => {
     if (countdown > 0) return;
-    
+
     try {
       setLoading(true);
       await sendOtp({ phone: formData.phone, otpPurpose: "REGISTER" });
@@ -155,7 +189,7 @@ function AuthPage() {
       setCountdown(60);
       setFormData((prev) => ({ ...prev, otp: "" }));
     } catch (error) {
-      const apiMessage = error.response?.data?.message ;
+      const apiMessage = error.response?.data?.message;
       setStatus({ type: "error", message: apiMessage });
     } finally {
       setLoading(false);
@@ -186,10 +220,10 @@ function AuthPage() {
         birthday: formData.birthday,
         gender: parseInt(formData.gender),
       });
-      
+
       sessionStorage.removeItem("verifyRegisterTokenOtp");
       setStatus({ type: "success", message: "Tạo tài khoản thành công! Đang chuyển đến đăng nhập..." });
-      
+
       setTimeout(() => {
         setMode("login");
         setRegisterStep(1);
@@ -218,6 +252,7 @@ function AuthPage() {
       const { data } = await login({
         phone: formData.phone,
         password: formData.password,
+        isRememberMe: rememberMe,
         captchaToken: showCaptcha ? captchaToken : null,
       });
 
@@ -225,7 +260,7 @@ function AuthPage() {
       if (token) {
         setCaptchaToken(null);
         sessionStorage.setItem("token", token);
-        
+
         try {
           const user = await fetchCurrentUser();
           if (user) {
@@ -242,7 +277,7 @@ function AuthPage() {
       setFormData(initialFormState);
     } catch (error) {
       const apiMessage = error.response?.data?.message;
-      
+
       if (apiMessage === "CAPTCHA_REQUIRED") {
         setShowCaptcha(true);
       } else {

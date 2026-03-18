@@ -2,7 +2,7 @@ import axios from "axios";
 
 export const refesh = () => {
   return axios.post(
-    "http://localhost:8080/api/token/refresh",
+    "http://localhost:8080/api/auth/refresh",
     {},
     { withCredentials: true }
   );

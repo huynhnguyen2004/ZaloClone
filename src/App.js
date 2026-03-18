@@ -5,6 +5,7 @@ import AdminLayout from "./layout/AdminLayout/AdminLayout";
 import ProfilePage from "./page/ProfilePage/ProfilePage";
 import UserProfilePage from "./page/UserProfilePage/UserProfilePage";
 import { UserProvider } from "./context/UserContext";
+import { SocialProvider } from "./context/SocialContext";
 import "./App.css";
 import { ChatProvider } from "./context/ChatContext";
 
@@ -24,9 +25,9 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
           
           {/* Customer Routes */}
-          <Route path="/home" element={<CustomerLayout />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/user/:userId" element={<UserProfilePage />} />
+          <Route path="/home" element={<SocialProvider><CustomerLayout /></SocialProvider>} />
+          <Route path="/profile" element={<SocialProvider><ProfilePage /></SocialProvider>} />
+          <Route path="/user/:userId" element={<SocialProvider><UserProfilePage /></SocialProvider>} />
           
           {/* Admin Routes - Nested */}
           <Route path="/admin" element={<AdminLayout />}>

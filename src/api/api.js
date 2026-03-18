@@ -1,13 +1,16 @@
 import axios from "axios";
 import { refesh } from "./service/refreshTokenService";
 import { logout } from "./service/authService";
+import { getAccessToken, setAccessToken } from "./tokenStorage";
+import {
+  enqueueFailedRequest,
+  isRefreshInProgress,
+  processRefreshQueue,
+  setRefreshInProgress,
+} from "./refreshState";
 
 // Địa chỉ API backend của bạn
 export const API_BASE_URL = "http://localhost:8080";
-
-const getToken = () => {
-  return sessionStorage.getItem("token");
-};
 
 // Tạo instance axios
 const api = axios.create({
@@ -16,47 +19,62 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Flag và queue để xử lý refresh token
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
-// Logout trực tiếp bằng axios (không qua interceptor)
-const logoutDirect = async () => {
-  try {
-    await axios.put(`${API_BASE_URL}/api/auth/logout`, null, {
-      
-      withCredentials: true,
-    });
-  } catch (err) {
-    console.warn("Logout error:", err);
-  }
-};
-
-// Xử lý clear session và redirect
-const handleLogout = async () => {
-  await logoutDirect();
-  sessionStorage.removeItem("token");
-  window.location.href = "/";
-};
-
 // 🟦 INTERCEPTOR GỬI TOKEN LÊN SERVER
 api.interceptors.request.use(
-  (config) => {
-    const token = getToken();
+  async (config) => {
+    const shouldSkipRefresh =
+      config.url?.includes("/api/auth/login") ||
+      config.url?.includes("/api/auth/register") ||
+      config.url?.includes("/api/auth/send-otp") ||
+      config.url?.includes("/api/auth/verify-otp") ||
+      config.url?.includes("/api/auth/reset-password") ||
+      config.url?.includes("/api/auth/logout") ||
+      config.url?.includes("/api/auth/refresh") ||
+      config.url?.includes("/api/token/refresh");
+
+    const token = getAccessToken();
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+      return config;
     }
+
+    if (shouldSkipRefresh) {
+      return config;
+    }
+
+    if (isRefreshInProgress()) {
+      return new Promise((resolve, reject) => {
+        enqueueFailedRequest(resolve, reject);
+      })
+        .then((newToken) => {
+          config.headers["Authorization"] = `Bearer ${newToken}`;
+          return config;
+        })
+        .catch((error) => Promise.reject(error));
+    }
+
+    setRefreshInProgress(true);
+
+    try {
+      const refreshRes = await refesh();
+
+      const newAccessToken = refreshRes?.data?.result?.accessToken;
+
+      if (!newAccessToken) {
+        throw new Error("No access token received");
+      }
+
+      setAccessToken(newAccessToken);
+      processRefreshQueue(null, newAccessToken);
+      config.headers["Authorization"] = `Bearer ${newAccessToken}`;
+      return config;
+    } catch (error) {
+      processRefreshQueue(error, null);
+      return Promise.reject(error);
+    } finally {
+      setRefreshInProgress(false);
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -84,10 +102,10 @@ api.interceptors.response.use(
 
     if (status === 401) {
       if (data?.message === "TOKEN_EXPIRED" && !originalRequest._retry) {
-        if (isRefreshing) {
+        if (isRefreshInProgress()) {
           // Nếu đang refresh, thêm request vào queue
           return new Promise((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
+            enqueueFailedRequest(resolve, reject);
           })
             .then((token) => {
               originalRequest.headers["Authorization"] = `Bearer ${token}`;
@@ -97,7 +115,7 @@ api.interceptors.response.use(
         }
 
         originalRequest._retry = true;
-        isRefreshing = true;
+        setRefreshInProgress(true);
 
         try {
           const res = await refesh();
@@ -109,27 +127,26 @@ api.interceptors.response.use(
             throw new Error("No access token received");
           }
 
-          sessionStorage.setItem("token", newAccessToken);
+          setAccessToken(newAccessToken);
           api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
           originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
-          processQueue(null, newAccessToken);
+          processRefreshQueue(null, newAccessToken);
 
           return api(originalRequest);
         } catch (err) {
-          processQueue(err, null);
-         await logout();
+          processRefreshQueue(err, null);
+          await logout();
           console.log(err);
-          
+
           return Promise.reject(err);
         } finally {
-          isRefreshing = false;
+          setRefreshInProgress(false);
         }
       }
 
       // Token invalid hoặc lỗi khác
       console.log("TOKEN_INVALID");
-      // await handleLogout();
       await logout();
       return Promise.reject(error);
     }
@@ -137,7 +154,6 @@ api.interceptors.response.use(
     if (status === 403) {
       console.log("Tài khoản đã bị khóa");
       await logout();
-      // await handleLogout();
       return Promise.reject(error);
     }
 

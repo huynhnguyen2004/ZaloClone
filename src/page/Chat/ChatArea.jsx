@@ -16,6 +16,7 @@ import {
   unRequestFriend,
   rejectFriendRequest
 } from "../../api/service/friend";
+import { useSocial } from "../../context/SocialContext";
 
 import { sendSocketData } from "../../api/websocket";
 
@@ -29,7 +30,8 @@ function ChatArea({ activeTab }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   // 🔥 Dữ liệu realtime lấy từ UserContext
-  const { friendRequests, removeFriendRequest, currentUser } = useUser();
+  const { currentUser } = useUser();
+  const { friendRequests, removeFriendRequest } = useSocial();
   const {activeChat,setActiveChat}=useChat();
 
   useEffect(() => {

@@ -11,13 +11,15 @@ import {
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
 import { useUser } from "../../../context/UserContext";
+import { useSocial } from "../../../context/SocialContext";
 import { useChat } from "../../../context/ChatContext";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
 
 function CustomerSideBar({ onTabChange }) {
     const [activeTab, setActiveTab] = useState("chats");
-    const { currentUser, friendRequests } = useUser();
+    const { currentUser } = useUser();
+    const { friendRequests } = useSocial();
     const { unreadCount, clearUnread } = useChat();
 
     const handleTabClick = (tabName) => {

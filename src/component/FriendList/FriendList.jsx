@@ -4,13 +4,15 @@ import { BiUserMinus } from "react-icons/bi";
 import "./FriendList.css";
 
 import { useUser } from "../../context/UserContext";
+import { useSocial } from "../../context/SocialContext";
 import { useChat } from "../../context/ChatContext";
 import { unFriend } from "../../api/service/friend";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function FriendList() {
   const navigate = useNavigate();
-  const { friends, currentUser, setFriends, isUserOnline } = useUser();
+  const { currentUser } = useUser();
+  const { friends, setFriends, isUserOnline } = useSocial();
   const { openChat } = useChat();
   const [removingIds, setRemovingIds] = useState([]);
 
