@@ -380,6 +380,18 @@ input:focus {
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
 }
 
+.auth__input-error {
+  border-color: #f04438 !important;
+  box-shadow: 0 0 0 3px rgba(240, 68, 56, 0.12);
+}
+
+.auth__field-error {
+  color: #b42318;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: -2px;
+}
+
 .auth__options {
   display: flex;
   align-items: center;

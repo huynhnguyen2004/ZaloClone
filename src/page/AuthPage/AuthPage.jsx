@@ -5,6 +5,7 @@ import logo from "../../asset/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import ReCAPTCHA from "react-google-recaptcha";
+import { handleApiError } from "../../utils/handleApiError";
 
 const initialFormState = {
   firstname: "",
@@ -33,6 +34,7 @@ function AuthPage() {
   const [forgotStep, setForgotStep] = useState(1);
   const captchaRef = useRef(null);
   const otpInputsRef = useRef([]);
+  const [fieldError, setFieldError] = useState({});
 
   const navigate = useNavigate();
   const { fetchCurrentUser } = useUser();
@@ -71,7 +73,12 @@ function AuthPage() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setFieldError((pre) => ({ ...pre, [name]: "" }));
   };
+
+  const getInputClass = (field) => (fieldError[field] ? "auth__input-error" : "");
+  const renderFieldError = (field) =>
+    fieldError[field] ? <span className="auth__field-error">{fieldError[field]}</span> : null;
 
   // Countdown timer for resend OTP
   useEffect(() => {
@@ -129,6 +136,7 @@ function AuthPage() {
   // Send OTP
   const handleSendOtp = async () => {
     if (!formData.phone) {
+      setFieldError((prev) => ({ ...prev, phone: "Vui lòng nhập số điện thoại" }));
       setStatus({ type: "error", message: "Vui lòng nhập số điện thoại" });
       return;
     }
@@ -140,8 +148,7 @@ function AuthPage() {
       setRegisterStep(2);
       setCountdown(60);
     } catch (error) {
-      const apiMessage = error.response?.data?.message;
-      setStatus({ type: "error", message: apiMessage });
+      handleApiError(error,setStatus,setFieldError)
     } finally {
       setLoading(false);
     }
@@ -149,10 +156,6 @@ function AuthPage() {
 
   // Verify OTP
   const handleVerifyOtp = async () => {
-    if (formData.otp.length !== 6) {
-      setStatus({ type: "error", message: "Vui lòng nhập đủ 6 số OTP" });
-      return;
-    }
 
     try {
       setLoading(true);
@@ -171,8 +174,9 @@ function AuthPage() {
         setStatus({ type: "error", message: "Không nhận được token xác thực" });
       }
     } catch (error) {
-      const apiMessage = error.response?.data?.message || "Xác thực OTP thất bại";
-      setStatus({ type: "error", message: apiMessage });
+       
+        
+       handleApiError(error,setStatus,setFieldError)
     } finally {
       setLoading(false);
     }
@@ -189,8 +193,7 @@ function AuthPage() {
       setCountdown(60);
       setFormData((prev) => ({ ...prev, otp: "" }));
     } catch (error) {
-      const apiMessage = error.response?.data?.message;
-      setStatus({ type: "error", message: apiMessage });
+      handleApiError(error,setStatus,setFieldError)
     } finally {
       setLoading(false);
     }
@@ -199,6 +202,7 @@ function AuthPage() {
   // Complete registration
   const handleRegister = async () => {
     if (formData.password !== formData.confirmPassword) {
+      setFieldError((prev) => ({ ...prev, confirmPassword: "Mật khẩu xác nhận không khớp" }));
       setStatus({ type: "error", message: "Mật khẩu xác nhận không khớp" });
       return;
     }
@@ -230,8 +234,8 @@ function AuthPage() {
         setFormData(initialFormState);
       }, 1500);
     } catch (error) {
-      const apiMessage = error.response?.data?.message || "Đăng ký thất bại";
-      setStatus({ type: "error", message: apiMessage });
+    
+      handleApiError(error,setStatus,setFieldError)
     } finally {
       setLoading(false);
     }
@@ -276,13 +280,12 @@ function AuthPage() {
       }
       setFormData(initialFormState);
     } catch (error) {
-      const apiMessage = error.response?.data?.message;
-
-      if (apiMessage === "CAPTCHA_REQUIRED") {
+      const apiCode = error?.response?.data?.code;
+      if (apiCode === "CAPTCHA_REQUIRED") {
         setShowCaptcha(true);
-      } else {
-        setStatus({ type: "error", message: apiMessage });
       }
+
+      handleApiError(error, setStatus, setFieldError);
 
       if (captchaRef.current) {
         captchaRef.current.reset();
@@ -296,6 +299,7 @@ function AuthPage() {
   // Forgot password - Send OTP
   const handleForgotSendOtp = async () => {
     if (!formData.phone) {
+      setFieldError((prev) => ({ ...prev, phone: "Vui lòng nhập số điện thoại" }));
       setStatus({ type: "error", message: "Vui lòng nhập số điện thoại" });
       return;
     }
@@ -306,8 +310,7 @@ function AuthPage() {
       setForgotStep(2);
       setCountdown(60);
     } catch (error) {
-      const apiMessage = error.response?.data?.message || "Gửi OTP thất bại";
-      setStatus({ type: "error", message: apiMessage });
+       handleApiError(error,setStatus,setFieldError);
     } finally {
       setLoading(false);
     }
@@ -316,6 +319,7 @@ function AuthPage() {
   // Forgot password - Verify OTP
   const handleForgotVerifyOtp = async () => {
     if (formData.otp.length !== 6) {
+      setFieldError((prev) => ({ ...prev, otp: "Vui lòng nhập đủ 6 số OTP" }));
       setStatus({ type: "error", message: "Vui lòng nhập đủ 6 số OTP" });
       return;
     }
@@ -335,8 +339,7 @@ function AuthPage() {
         setStatus({ type: "error", message: "Không nhận được token xác thực" });
       }
     } catch (error) {
-      const apiMessage = error.response?.data?.message || "Xác thực OTP thất bại";
-      setStatus({ type: "error", message: apiMessage });
+      handleApiError(error,setStatus,setFieldError)
     } finally {
       setLoading(false);
     }
@@ -352,8 +355,7 @@ function AuthPage() {
       setCountdown(60);
       setFormData((prev) => ({ ...prev, otp: "" }));
     } catch (error) {
-      const apiMessage = error.response?.data?.message || "Gửi lại OTP thất bại";
-      setStatus({ type: "error", message: apiMessage });
+      handleApiError(error,setStatus,setFieldError);
     } finally {
       setLoading(false);
     }
@@ -362,6 +364,7 @@ function AuthPage() {
   // Forgot password - Reset password
   const handleResetPassword = async () => {
     if (formData.password !== formData.confirmPassword) {
+      setFieldError((prev) => ({ ...prev, confirmPassword: "Mật khẩu xác nhận không khớp" }));
       setStatus({ type: "error", message: "Mật khẩu xác nhận không khớp" });
       return;
     }
@@ -385,8 +388,7 @@ function AuthPage() {
         setFormData(initialFormState);
       }, 1500);
     } catch (error) {
-      const apiMessage = error.response?.data?.message || "Đặt lại mật khẩu thất bại";
-      setStatus({ type: "error", message: apiMessage });
+      handleApiError(error,setStatus,setFieldError);
     } finally {
       setLoading(false);
     }
@@ -398,6 +400,7 @@ function AuthPage() {
     setRegisterStep(1);
     setForgotStep(1);
     setFormData(initialFormState);
+    setFieldError({});
     setStatus({ type: "", message: "" });
   };
 
@@ -442,11 +445,13 @@ function AuthPage() {
         <input
           name="phone"
           type="tel"
+          className={getInputClass("phone")}
           placeholder="0912345678"
           value={formData.phone}
           onChange={handleChange}
           required
         />
+        {renderFieldError("phone")}
       </label>
 
       <button
@@ -480,13 +485,14 @@ function AuthPage() {
             type="text"
             inputMode="numeric"
             maxLength={1}
-            className="auth__otp-input"
+            className={`auth__otp-input ${getInputClass("otp")}`}
             value={formData.otp[index] || ""}
             onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ""))}
             onKeyDown={(e) => handleOtpKeyDown(index, e)}
           />
         ))}
       </div>
+      {renderFieldError("otp")}
 
       <div className="auth__otp-actions">
         <button
@@ -503,7 +509,7 @@ function AuthPage() {
         type="button"
         className="auth__submit"
         onClick={handleVerifyOtp}
-        disabled={loading || formData.otp.length !== 6}
+        disabled={loading }
       >
         {loading ? "Đang xác thực..." : "Xác nhận"}
       </button>
@@ -527,21 +533,25 @@ function AuthPage() {
           Tên
           <input
             name="firstname"
+            className={getInputClass("firstname")}
             placeholder="Nguyễn"
             value={formData.firstname}
             onChange={handleChange}
             required
           />
+          {renderFieldError("firstname")}
         </label>
         <label>
           Họ
           <input
             name="lastname"
+            className={getInputClass("lastname")}
             placeholder="Văn A"
             value={formData.lastname}
             onChange={handleChange}
             required
           />
+          {renderFieldError("lastname")}
         </label>
       </div>
 
@@ -550,11 +560,13 @@ function AuthPage() {
         <input
           type="password"
           name="password"
+          className={getInputClass("password")}
           placeholder="••••••••"
           value={formData.password}
           onChange={handleChange}
           required
         />
+        {renderFieldError("password")}
       </label>
 
       <label>
@@ -562,11 +574,13 @@ function AuthPage() {
         <input
           type="password"
           name="confirmPassword"
+          className={getInputClass("confirmPassword")}
           placeholder="••••••••"
           value={formData.confirmPassword}
           onChange={handleChange}
           required
         />
+        {renderFieldError("confirmPassword")}
       </label>
 
       <label>
@@ -574,10 +588,12 @@ function AuthPage() {
         <input
           type="date"
           name="birthday"
+          className={getInputClass("birthday")}
           value={formData.birthday}
           onChange={handleChange}
           required
         />
+        {renderFieldError("birthday")}
       </label>
 
       <div className="auth__gender">
@@ -614,13 +630,14 @@ function AuthPage() {
             Khác
           </label>
         </div>
+        {renderFieldError("gender")}
       </div>
 
       <button
         type="button"
         className="auth__submit"
         onClick={handleRegister}
-        disabled={loading || !formData.firstname || !formData.lastname || !formData.password || !formData.confirmPassword || !formData.birthday}
+        disabled={loading}
       >
         {loading ? "Đang đăng ký..." : "Hoàn tất đăng ký"}
       </button>
@@ -662,11 +679,13 @@ function AuthPage() {
         <input
           name="phone"
           type="tel"
+          className={getInputClass("phone")}
           placeholder="0912345678"
           value={formData.phone}
           onChange={handleChange}
           required
         />
+        {renderFieldError("phone")}
       </label>
       <button
         type="button"
@@ -697,13 +716,14 @@ function AuthPage() {
             type="text"
             inputMode="numeric"
             maxLength={1}
-            className="auth__otp-input"
+            className={`auth__otp-input ${getInputClass("otp")}`}
             value={formData.otp[index] || ""}
             onChange={(e) => handleOtpChange(index, e.target.value.replace(/\D/g, ""))}
             onKeyDown={(e) => handleOtpKeyDown(index, e)}
           />
         ))}
       </div>
+      {renderFieldError("otp")}
       <div className="auth__otp-actions">
         <button
           type="button"
@@ -740,22 +760,26 @@ function AuthPage() {
         <input
           type="password"
           name="password"
+          className={getInputClass("password")}
           placeholder="••••••••"
           value={formData.password}
           onChange={handleChange}
           required
         />
+        {renderFieldError("password")}
       </label>
       <label>
         Xác nhận mật khẩu mới
         <input
           type="password"
           name="confirmPassword"
+          className={getInputClass("confirmPassword")}
           placeholder="••••••••"
           value={formData.confirmPassword}
           onChange={handleChange}
           required
         />
+        {renderFieldError("confirmPassword")}
       </label>
       <button
         type="button"
@@ -817,11 +841,13 @@ function AuthPage() {
                   Số điện thoại
                   <input
                     name="phone"
+                    className={getInputClass("phone")}
                     placeholder="0912345678"
                     value={formData.phone}
                     onChange={handleChange}
                     required
                   />
+                  {renderFieldError("phone")}
                 </label>
 
                 <label>
@@ -829,11 +855,13 @@ function AuthPage() {
                   <input
                     type="password"
                     name="password"
+                    className={getInputClass("password")}
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
                     required
                   />
+                  {renderFieldError("password")}
                 </label>
 
                 <div className="auth__options">
