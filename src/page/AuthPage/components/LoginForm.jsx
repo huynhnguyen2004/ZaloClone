@@ -5,12 +5,10 @@ export default function LoginForm({
   formData,
   fieldError,
   loading,
-  rememberMe,
   showCaptcha,
   captchaRef,
   siteKey,
   onChange,
-  onRememberChange,
   onCaptchaChange,
   onSubmit,
   onForgotPassword,
@@ -53,17 +51,31 @@ export default function LoginForm({
 
         <div className="auth__options">
           <label className="auth__remember">
-            <input type="checkbox" checked={rememberMe} onChange={(event) => onRememberChange(event.target.checked)} />
+            <input
+              type="checkbox"
+              name="isRememberMe"
+              checked={formData.isRememberMe}
+              onChange={onChange}
+              
+            />
             Ghi nhớ tôi
           </label>
-          <button type="button" className="auth__link" onClick={onForgotPassword}>
+          <button
+            type="button"
+            className="auth__link"
+            onClick={onForgotPassword}
+          >
             Quên mật khẩu?
           </button>
         </div>
 
         {showCaptcha && (
           <div style={{ marginTop: "12px" }}>
-            <ReCAPTCHA ref={captchaRef} sitekey={siteKey} onChange={onCaptchaChange} />
+            <ReCAPTCHA
+              ref={captchaRef}
+              sitekey={siteKey}
+              onChange={onCaptchaChange}
+            />
           </div>
         )}
 
@@ -78,10 +90,16 @@ export default function LoginForm({
 
       <div className="auth__social">
         <button type="button" aria-label="Google sign in">
-          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" />
+          <img
+            src="https://www.svgrepo.com/show/475656/google-color.svg"
+            alt="Google"
+          />
         </button>
         <button type="button" aria-label="Facebook sign in">
-          <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg" alt="Facebook" />
+          <img
+            src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg"
+            alt="Facebook"
+          />
         </button>
       </div>
     </>

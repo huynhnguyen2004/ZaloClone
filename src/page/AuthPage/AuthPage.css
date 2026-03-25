@@ -96,6 +96,25 @@
   box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
 }
 
+.auth__status {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.auth__status--error {
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
+}
+
+.auth__status--success {
+  background: #ecfdf3;
+  color: #027a48;
+  border: 1px solid #abefc6;
+}
+
 /* ============================
    STEP INDICATOR STYLES
    ============================ */

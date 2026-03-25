@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthPage from "./page/AuthPage/AuthPage";
 import "./App.css";
-import { UserProvider } from "./context/UserContext";
+import { UserProvider } from "./context/userContext";
 
 function App() {
   return (

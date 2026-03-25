@@ -9,7 +9,6 @@ import {
   setRefreshInProgress,
 } from "./refreshState";
 
-// Địa chỉ API backend của bạn
 export const API_BASE_URL = "http://localhost:8080";
 
 // Tạo instance axios
