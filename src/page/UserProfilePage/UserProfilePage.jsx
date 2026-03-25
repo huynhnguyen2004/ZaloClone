@@ -15,6 +15,7 @@ import {
 } from "react-icons/bi";
 import { FaUserClock, FaUserTimes } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
+import { useSocial } from "../../context/SocialContext";
 import { useChat } from "../../context/ChatContext";
 import { seenProfile } from "../../api/service/userService";
 import { 
@@ -38,7 +39,8 @@ const RelationshipStatus = {
 function UserProfilePage() {
     const navigate = useNavigate();
     const { userId } = useParams();
-    const { currentUser, removeFriendRequest } = useUser();
+    const { currentUser } = useUser();
+    const { removeFriendRequest } = useSocial();
     const { openChat } = useChat();
     
     const [profile, setProfile] = useState(null);

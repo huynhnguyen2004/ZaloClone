@@ -23,8 +23,7 @@ const callbacks = {
 let seenSubscription = null;
 let pendingSeen = null;
 
-const WS_BASE_URL =
-  process.env.REACT_APP_WS_BASE_URL || API_BASE_URL;
+const WS_BASE_URL = API_BASE_URL;
 
 /**
  * ==========================
@@ -72,11 +71,12 @@ export const connectWebSocket = ({
   const socketUrl = `${base}/ws${token ? `?token=${token}` : ""}`;
 
   stompClient = new Client({
-    webSocketFactory: () => new SockJS(socketUrl),
+    webSocketFactory: () =>
+      new SockJS(socketUrl, null, {
+        withCredentials: true,
+      }),
     reconnectDelay: 1000,
-    connectHeaders: token
-      ? { Authorization: `Bearer ${token}` }
-      : {},
+    connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
   });
 
   stompClient.onConnect = () => {
@@ -128,7 +128,7 @@ export const connectWebSocket = ({
     if (pendingSeen) {
       subscribeToConversationSeen(
         pendingSeen.conversationId,
-        pendingSeen.callback
+        pendingSeen.callback,
       );
       pendingSeen = null;
     }
@@ -144,7 +144,6 @@ export const connectWebSocket = ({
     // Backend nên xử lý disconnect event để đánh dấu offline
     connectedUserId = null;
   };
-
 
   stompClient.activate();
 };
@@ -195,12 +194,15 @@ export const sendUserOffline = (userId) => {
 // Sử dụng sendBeacon để gửi offline khi đóng tab (đảm bảo gửi được)
 export const sendUserOfflineBeacon = (userId) => {
   const token = sessionStorage.getItem("token");
-  const base = (process.env.REACT_APP_WS_BASE_URL || API_BASE_URL).replace(/\/$/, "");
+  const base = (process.env.REACT_APP_WS_BASE_URL || API_BASE_URL).replace(
+    /\/$/,
+    "",
+  );
   const url = `${base}/api/presence/offline`;
-  
+
   const data = JSON.stringify({ userId });
   const blob = new Blob([data], { type: "application/json" });
-  
+
   // sendBeacon đảm bảo request được gửi ngay cả khi tab đang đóng
   if (navigator.sendBeacon) {
     navigator.sendBeacon(url, blob);

@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
 import { useUser } from "../../context/UserContext";
+import { useSocial } from "../../context/SocialContext";
 import { useChat } from "../../context/ChatContext";
 import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 
 export default function ConversationList() {
   const navigate = useNavigate();
-  const { currentUser, isUserOnline } = useUser();
+  const { currentUser } = useUser();
+  const { isUserOnline } = useSocial();
   const { openChat, activeChat, messages, newMessageTrigger } = useChat();
   const [conversations, setConversations] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true); // Chỉ loading lần đầu

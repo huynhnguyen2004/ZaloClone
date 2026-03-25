@@ -1,4 +1,7 @@
 import api from "../api";
 export const login=(data)=>api.post("/api/auth/login",data);
-export const register=(data)=>api.post("/api/user/register",data);
-export const logout=(id)=>api.put(`/api/auth/logout/${id}`);
+export const register=(data)=>api.post("/api/auth/register",data);
+export const logout=()=>api.put("/api/auth/logout");
+export const sendOtp=(data)=>api.post("/api/auth/send-otp",data);
+export const verifyOtp=(data)=>api.post("/api/auth/verify-otp",data);
+export const resetPassword=(data)=>api.post("/api/auth/reset-password",data)

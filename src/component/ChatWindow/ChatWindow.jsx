@@ -6,6 +6,7 @@ import { BiArrowBack } from "react-icons/bi";
 import { FiPhone, FiVideo } from "react-icons/fi";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "../../context/UserContext";
+import { useSocial } from "../../context/SocialContext";
 import { sendMessage,readMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
@@ -13,7 +14,8 @@ import { getAvatarUrl } from "../../utils/avatarHelper";
 export default function ChatWindow({ onCloseChat }) {
   const navigate = useNavigate();
   const { activeChat, messages, setMessages } = useChat();
-  const { currentUser, isUserOnline } = useUser();
+  const { currentUser } = useUser();
+  const { isUserOnline } = useSocial();
   const [text, setText] = useState("");
   const endRef = useRef();
   const pendingMessageIds = useRef(new Set()); // 🔥 Track pending messages

@@ -1,127 +1,144 @@
 import { useEffect, useRef, useState } from "react";
-import { login, register } from "../../api/service/authService";
-import "./AuthPage.css";
-import logo from "../../asset/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import ReCAPTCHA from "react-google-recaptcha";
+import logo from "../../asset/logo.png";
+import "./AuthPage.css";
+import { initialFormState, SITE_KEY } from "./constants";
+import LoginForm from "./components/LoginForm";
+import RegisterForm from "./components/RegisterForm";
+import ForgotPasswordForm from "./components/ForgotPasswordForm";
+import useAuthActions from "./hooks/useAuthActions";
 
-const initialFormState = {
-  firstname: "",
-  lastname: "",
-  phone: "",
-  password: "",
-  confirmPassword: "",
-  birthday: "",
-  gender: 0,
-};
-const SITE_KEY = "6LchvTUsAAAAAHygJx9houBHwGhQvHAtOf_yWUa3";
 function AuthPage() {
   const [mode, setMode] = useState("login");
+  const [registerStep, setRegisterStep] = useState(1);
+  const [forgotStep, setForgotStep] = useState(1);
   const [formData, setFormData] = useState(initialFormState);
   const [rememberMe, setRememberMe] = useState(false);
+  const [fieldError, setFieldError] = useState({});
   const [status, setStatus] = useState({ type: "", message: "" });
+  const [showCaptcha, setShowCaptcha] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
-  const [failed, setFailed] = useState(0);
   const [loading, setLoading] = useState(false);
-  const captchaRef = useRef(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [countdown, setCountdown] = useState(0);
 
+  const captchaRef = useRef(null);
   const navigate = useNavigate();
   const { fetchCurrentUser } = useUser();
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const bootstrapLogin = async () => {
+      try {
+        const user = await fetchCurrentUser();
+        if (!isMounted || !user) return;
+
+        navigate(user.role === "Customer" ? "/home" : "/admin");
+      } catch {
+        if (isMounted) {
+          navigate("/");
+        }
+      } finally {
+        if (isMounted) {
+          setIsBootstrapping(false);
+        }
+      }
+    };
+
+    bootstrapLogin();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchCurrentUser, navigate]);
+
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown((previous) => previous - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   useEffect(() => {
     if (!status?.message) return;
-
-    const timer = setTimeout(() => {
-      setStatus({ type: "", message: "" });
-    }, 2000);
-
+    const timer = setTimeout(() => setStatus({ type: "", message: "" }), 3000);
     return () => clearTimeout(timer);
   }, [status]);
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const actions = useAuthActions({
+    formData,
+    countdown,
+    rememberMe,
+    captchaToken,
+    showCaptcha,
+    setFormData,
+    setFieldError,
+    setStatus,
+    setLoading,
+    setRegisterStep,
+    setForgotStep,
+    setCountdown,
+    setShowCaptcha,
+    setCaptchaToken,
+    fetchCurrentUser,
+    navigate,
+    captchaRef,
+    initialFormState,
+  });
+
+  const resetFormContext = () => {
+    setFormData(initialFormState);
+    setFieldError({});
     setStatus({ type: "", message: "" });
-
-    if (mode === "register" && formData.password !== formData.confirmPassword) {
-      setStatus({ type: "error", message: "Mật khẩu xác nhận không khớp" });
-      return;
-    }
-
-    // Kiểm tra captcha khi đăng nhập thất bại >= 3 lần
-    if (mode === "login" && failed >= 3 && !captchaToken) {
-      setStatus({ type: "error", message: "Vui lòng xác minh captcha" });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      if (mode === "login") {
-        const { data } = await login({
-          phone: formData.phone,
-          password: formData.password,
-          captchaToken: failed >= 3 ? captchaToken : null,
-        });
-
-        const token = data?.result?.token;
-        if (token) {
-          setFailed(0);
-          setCaptchaToken(null);
-
-          sessionStorage.setItem("token", token);
-        }
-        if (token) {
-          try {
-            await fetchCurrentUser();
-          } catch (error) {
-            console.warn("Không thể fetch user sau login:", error);
-          }
-        }
-
-        const user = data?.result?.user;
-        if (user) {
-          if (user.role === "Customer") {
-            navigate("/home");
-          } else {
-            navigate("/admin");
-          }
-        }
-      } else {
-        await register({
-          phone: formData.phone,
-          password: formData.password,
-          firstname: formData.firstname,
-          lastname: formData.lastname,
-          birthday: formData.birthday,
-          gender: parseInt(formData.gender),
-        });
-        setStatus({
-          type: "success",
-          message: "Tạo tài khoản thành công, hãy đăng nhập.",
-        });
-        setMode("login");
-      }
-      setFormData(initialFormState);
-    } catch (error) {
-      const apiMessage =
-        error.response?.data?.messenge || "Có lỗi xảy ra, vui lòng thử lại.";
-      setStatus({ type: "error", message: apiMessage });
-
-      if (mode === "login") {
-        setFailed((prev) => prev + 1);
-      }
-      if (captchaRef.current) {
-        captchaRef.current.reset();
-        setCaptchaToken(null);
-      }
-    } finally {
-      setLoading(false);
-    }
+    setCountdown(0);
+    setCaptchaToken(null);
   };
+
+  const handleModeSwitch = (nextMode) => {
+    setMode(nextMode);
+    setRegisterStep(1);
+    setForgotStep(1);
+    resetFormContext();
+  };
+
+  const handleRegisterBack = () => {
+    if (registerStep <= 1) return;
+    setRegisterStep((previous) => previous - 1);
+    setStatus({ type: "", message: "" });
+  };
+
+  const handleForgotBackStep = () => {
+    if (forgotStep <= 1) return;
+    setForgotStep((previous) => previous - 1);
+    setStatus({ type: "", message: "" });
+  };
+
+  const handleRegister = async () => {
+    const success = await actions.handleRegister();
+    if (!success) return;
+
+    setTimeout(() => {
+      setMode("login");
+      setRegisterStep(1);
+      resetFormContext();
+    }, 1500);
+  };
+
+  const handleResetPassword = async () => {
+    const success = await actions.handleResetPassword();
+    if (!success) return;
+
+    setTimeout(() => {
+      setMode("login");
+      setForgotStep(1);
+      resetFormContext();
+    }, 1500);
+  };
+
+  if (isBootstrapping) {
+    return null;
+  }
 
   return (
     <div className="auth">
@@ -140,199 +157,63 @@ function AuthPage() {
 
         <section className="auth__form">
           <div className="auth__tab">
-            <button
-              className={mode === "login" ? "active" : ""}
-              onClick={() => setMode("login")}
-              type="button"
-            >
+            <button className={mode === "login" ? "active" : ""} onClick={() => handleModeSwitch("login")} type="button">
               Đăng nhập
             </button>
-            <button
-              className={mode === "register" ? "active" : ""}
-              onClick={() => setMode("register")}
-              type="button"
-            >
+            <button className={mode === "register" ? "active" : ""} onClick={() => handleModeSwitch("register")} type="button">
               Đăng ký
             </button>
           </div>
 
-          <div className="auth__welcome">
-            <h2>{mode === "login" ? "Chào mừng trở lại!" : "Tạo tài khoản"}</h2>
-            <p>
-              {mode === "login"
-                ? "Vui lòng nhập thông tin để đăng nhập."
-                : "Điền thông tin bên dưới để bắt đầu cùng chúng tôi."}
-            </p>
-          </div>
+          {status?.message && <div className={`auth__alert ${status.type}`}>{status.message}</div>}
 
-          {status?.message && (
-            <div className={`auth__alert ${status.type}`}>{status.message}</div>
+          {mode === "login" ? (
+            <LoginForm
+              formData={formData}
+              fieldError={fieldError}
+              loading={loading}
+              rememberMe={rememberMe}
+              showCaptcha={showCaptcha}
+              captchaRef={captchaRef}
+              siteKey={SITE_KEY}
+              onChange={actions.handleChange}
+              onRememberChange={setRememberMe}
+              onCaptchaChange={setCaptchaToken}
+              onSubmit={actions.handleLogin}
+              onForgotPassword={() => handleModeSwitch("forgot")}
+            />
+          ) : mode === "forgot" ? (
+            <ForgotPasswordForm
+              forgotStep={forgotStep}
+              formData={formData}
+              fieldError={fieldError}
+              loading={loading}
+              countdown={countdown}
+              onChange={actions.handleChange}
+              onBackToLogin={() => handleModeSwitch("login")}
+              onBackStep={handleForgotBackStep}
+              onOtpChange={actions.updateOtpValue}
+              onSendOtp={actions.handleSendForgotOtp}
+              onVerifyOtp={actions.handleVerifyForgotOtp}
+              onResendOtp={actions.handleResendForgotOtp}
+              onResetPassword={handleResetPassword}
+            />
+          ) : (
+            <RegisterForm
+              registerStep={registerStep}
+              formData={formData}
+              fieldError={fieldError}
+              loading={loading}
+              countdown={countdown}
+              onChange={actions.handleChange}
+              onBack={handleRegisterBack}
+              onOtpChange={actions.updateOtpValue}
+              onSendOtp={actions.handleSendRegisterOtp}
+              onVerifyOtp={actions.handleVerifyRegisterOtp}
+              onResendOtp={actions.handleResendRegisterOtp}
+              onRegister={handleRegister}
+            />
           )}
-
-          <form onSubmit={handleSubmit}>
-            {mode === "register" && (
-              <div className="auth__name-fields">
-                <label>
-                  Tên
-                  <input
-                    name="firstname"
-                    placeholder="Nguyễn"
-                    value={formData.firstname}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-                <label>
-                  Họ
-                  <input
-                    name="lastname"
-                    placeholder="Văn A"
-                    value={formData.lastname}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-              </div>
-            )}
-
-            <label>
-              Số điện thoại
-              <input
-                name="phone"
-                placeholder="0912345678"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-              />
-            </label>
-
-            <label>
-              Mật khẩu
-              <input
-                type="password"
-                name="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </label>
-
-            {mode === "register" && (
-              <>
-                <label>
-                  Xác nhận mật khẩu
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-
-                <label>
-                  Ngày sinh
-                  <input
-                    type="date"
-                    name="birthday"
-                    value={formData.birthday}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-
-                <div className="auth__gender">
-                  <span>Giới tính</span>
-                  <div className="auth__gender-options">
-                    <label>
-                      <input
-                        type="radio"
-                        name="gender"
-                        value={0}
-                        checked={parseInt(formData.gender) === 0}
-                        onChange={handleChange}
-                      />
-                      Nam
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="gender"
-                        value={1}
-                        checked={parseInt(formData.gender) === 1}
-                        onChange={handleChange}
-                      />
-                      Nữ
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        name="gender"
-                        value={2}
-                        checked={parseInt(formData.gender) === 2}
-                        onChange={handleChange}
-                      />
-                      Khác
-                    </label>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {mode === "login" && (
-              <div className="auth__options">
-                <label className="auth__remember">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                  />
-                  Ghi nhớ tôi
-                </label>
-                <button type="button" className="auth__link">
-                  Quên mật khẩu?
-                </button>
-              </div>
-            )}
-
-            {mode === "login" && failed >= 3 && (
-              <div style={{ marginTop: "12px" }}>
-                <ReCAPTCHA
-                  ref={captchaRef}
-                  sitekey={SITE_KEY}
-                  onChange={(token) => setCaptchaToken(token)}
-                />
-              </div>
-            )}
-            <button type="submit" className="auth__submit" disabled={loading}>
-              {loading
-                ? "Đang xử lý..."
-                : mode === "login"
-                ? "Đăng nhập"
-                : "Đăng ký"}
-            </button>
-          </form>
-
-          <div className="auth__divider">
-            <span>Hoặc tiếp tục với</span>
-          </div>
-
-          <div className="auth__social">
-            <button type="button" aria-label="Google sign in">
-              <img
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-              />
-            </button>
-            <button type="button" aria-label="Facebook sign in">
-              <img
-                src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/facebook.svg"
-                alt="Facebook"
-              />
-            </button>
-          </div>
         </section>
       </div>
     </div>
