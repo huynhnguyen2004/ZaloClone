@@ -138,8 +138,7 @@ api.interceptors.response.use(
           return api(originalRequest);
         } catch (err) {
           processRefreshQueue(err, null);
-          clearAccessToken();
-          await logout({ headers: { "X-Skip-Refresh": "true" } });
+          await logout();
           console.log(err);
 
           return Promise.reject(err);
@@ -148,16 +147,15 @@ api.interceptors.response.use(
         }
       }
 
-    
-      clearAccessToken();
-      await logout({ headers: { "X-Skip-Refresh": "true" } });
+      // Token invalid hoặc lỗi khác
+      console.log("TOKEN_INVALID");
+      await logout();
       return Promise.reject(error);
     }
 
     if (status === 403) {
       console.log("Tài khoản đã bị khóa");
-      clearAccessToken();
-      await logout({ headers: { "X-Skip-Refresh": "true" } });
+      await logout();
       return Promise.reject(error);
     }
 

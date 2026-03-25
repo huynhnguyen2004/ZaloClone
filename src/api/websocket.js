@@ -5,7 +5,6 @@ import { API_BASE_URL } from "./api";
 let stompClient = null;
 let connectedUserId = null;
 
-
 const callbacks = {
   onReceiveRequest: null,
   onReceiveAccept: null,

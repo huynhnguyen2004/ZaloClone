@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../asset/logo.png";
 import "./AuthPage.css";
-import LoginForm from "./components/LoginForm";
-import RegisterForm from "./components/RegisterForm";
-import ForgotPasswordForm from "./components/ForgotPasswordForm";
-import { initialFormState } from "./constants";
 import useAuth from "../../hooks/useAuth";
 import { useOtp } from "../../hooks/useOtp";
 import { useUser } from "../../hooks/useUser";
 import { register, resetPassword } from "../../api/service/authService";
 import { handleApiError } from "../../utils/handleApiError";
+import { initialFormState } from "./constants";
+import LoginForm from "../AuthPage/Components/LoginForm";
+import RegisterForm from "../AuthPage/Components/RegisterForm";
+import ForgotPasswordForm from "../AuthPage/Components/RegisterForm";
 
 function AuthPage() {
   const [mode, setMode] = useState("login");
@@ -22,7 +22,7 @@ function AuthPage() {
   const [forgotVerifyToken, setForgotVerifyToken] = useState("");
 
   const navigate = useNavigate();
-  const { user, fetchCurrentUser } = useUser();
+  const { fetchCurrentUser } = useUser();
   const { countdown, send, verify, setCountdown } = useOtp();
 
   const { handleLogin, loading, status, setStatus } = useAuth({
@@ -30,11 +30,6 @@ function AuthPage() {
     fetchCurrentUser,
   });
 
-  useEffect(() => {
-    if (user) {
-      navigate(user.role === "Customer" ? "/home" : "/admin");
-    }
-  }, [user, navigate]);
 
   useEffect(() => {
     if (countdown <= 0) {

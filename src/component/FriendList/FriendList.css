@@ -1,0 +1,176 @@
+/* ===== Empty State ===== */
+.empty-chat-state {
+  height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  margin: 0 auto;
+ 
+}
+
+.empty-chat-state h3 {
+    margin: 0 auto;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.empty-chat-state p {
+    margin: 0 auto;
+  font-size: 14px;
+  color: #888;
+}
+
+
+/* ===== Friend List Container ===== */
+.friend-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+/* ===== Friend Card ===== */
+.friend-card {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.friend-card:hover {
+  background: #f3f3f3;
+}
+
+
+/* ===== Avatar + Online ===== */
+.friend-avatar-wrapper {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  margin-right: 12px;
+}
+
+.friend-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Clickable Avatar */
+.friend-avatar.clickable-avatar {
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.friend-avatar.clickable-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.25);
+  border-color: #0068ff;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  width: 12px;
+  height: 12px;
+  background: #4cd137;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+
+/* ===== Info ===== */
+.friend-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.friend-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+}
+
+
+/* ===== Unfriend Button ===== */
+.unfriend-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #ffd0d0;
+  background: #fff4f4;
+  color: #ff4444;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+  opacity: 0;
+}
+
+.friend-card:hover .unfriend-btn {
+  opacity: 1;
+}
+
+.unfriend-btn:hover {
+  background: #ff4444;
+  color: #fff;
+  border-color: #ff4444;
+  box-shadow: 0 3px 8px rgba(255, 68, 68, 0.3);
+  transform: scale(1.1);
+}
+
+.unfriend-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+  .friend-card {
+    padding: 10px;
+  }
+  
+  .friend-avatar-wrapper {
+    width: 42px;
+    height: 42px;
+  }
+
+  .friend-info h4 {
+    font-size: 15px;
+  }
+
+  .friend-info p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .friend-card {
+    padding: 8px;
+  }
+
+  .friend-avatar-wrapper {
+    width: 38px;
+    height: 38px;
+  }
+
+  .empty-chat-state h3 {
+    font-size: 18px;
+  }
+}

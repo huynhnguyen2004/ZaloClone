@@ -1,0 +1,265 @@
+.admin-settings {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.admin-settings .settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.admin-settings .settings-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.admin-settings .settings-header p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.admin-settings .btn-save {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-settings .btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Settings Grid */
+.admin-settings .settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.admin-settings .settings-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-settings .card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.admin-settings .card-icon.security {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.admin-settings .card-icon.storage {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.admin-settings .card-icon.notification {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.admin-settings .settings-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+}
+
+/* Form */
+.admin-settings .settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-settings .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-settings .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.admin-settings .form-group input,
+.admin-settings .form-group textarea {
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  resize: none;
+}
+
+.admin-settings .form-group input:focus,
+.admin-settings .form-group textarea:focus {
+  outline: none;
+  border-color: #0068ff;
+  box-shadow: 0 0 0 3px rgba(0, 104, 255, 0.1);
+}
+
+/* Toggle Group */
+.admin-settings .toggle-group {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-settings .toggle-group:last-child {
+  border-bottom: none;
+}
+
+.admin-settings .toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-settings .toggle-info label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.admin-settings .toggle-info span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* Toggle Switch */
+.admin-settings .toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.admin-settings .toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.admin-settings .toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #cbd5e1;
+  border-radius: 28px;
+  transition: 0.3s;
+}
+
+.admin-settings .toggle-slider::before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-settings .toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #0068ff 0%, #0099ff 100%);
+}
+
+.admin-settings .toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .admin-settings .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-settings .settings-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .admin-settings .settings-header h1 {
+    font-size: 24px;
+  }
+
+  .admin-settings .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .admin-settings .settings-header h1,
+  .admin-settings .settings-card h3,
+  .admin-settings .toggle-info label {
+    color: #f1f5f9;
+  }
+
+  .admin-settings .settings-header p,
+  .admin-settings .form-group label,
+  .admin-settings .toggle-info span {
+    color: #94a3b8;
+  }
+
+  .admin-settings .settings-card {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .admin-settings .form-group input,
+  .admin-settings .form-group textarea {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+  }
+
+  .admin-settings .toggle-group {
+    border-color: #334155;
+  }
+
+  .admin-settings .toggle-slider {
+    background: #475569;
+  }
+}

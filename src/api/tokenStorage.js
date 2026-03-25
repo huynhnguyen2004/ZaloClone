@@ -5,6 +5,5 @@ export const setAccessToken = (token) => {
 };
 
 export const clearAccessToken = () => {
-
   sessionStorage.removeItem("token");
 };
