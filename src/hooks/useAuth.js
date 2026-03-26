@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { login } from "../api/service/authService";
 import { handleApiError } from "../utils/handleApiError";
+import { getCurrentUser } from "../api/service/userService";
 
-export default function useAuth({ navigate, fetchCurrentUser }) {
+export default function useAuth({ navigate }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({});
 
@@ -13,13 +14,12 @@ export default function useAuth({ navigate, fetchCurrentUser }) {
     const { data } = await login(formData);
     const token = data?.result?.accessToken;
     sessionStorage.setItem("token", token);
-    const user = await fetchCurrentUser();
+    const user = await getCurrentUser();
    
-    
+  
     navigate(user?.role === "Customer" ? "/home" : "/admin");
 
   } catch (err) {
-    console.error(err);
     handleApiError(err, setStatus, setFieldError);
   } finally {
     setLoading(false);

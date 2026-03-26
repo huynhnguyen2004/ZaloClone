@@ -1,217 +1,131 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
-
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getCurrentUser } from "../api/service/userService";
+import { resolveCurrentUser } from "./userSession";
 import { logout as apiLogout } from "../api/service/authService";
-import { connectWebSocket, disconnectWebSocket, sendUserOffline, sendUserOfflineBeacon, sendUserOnline } from "../api/websocket";
-import { getAllFriendSend, getAllFriend } from "../api/service/friend";
 
+import {
+  connectWebSocket,
+  disconnectWebSocket,
+  sendUserOffline,
+  sendUserOfflineBeacon,
+} from "../api/websocket";
+import { clearAccessToken, getAccessToken } from "../api/tokenStorage";
+
+// =======================
+// CONTEXT
+// =======================
 export const UserContext = createContext();
 
+// =======================
+// PROVIDER
+// =======================
 export const UserProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [friendRequests, setFriendRequests] = useState([]);
-  const [friends, setFriends] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Lưu trữ danh sách userId online
-
-  const wsInitializedRef = useRef(false);
   const navigate = useNavigate();
 
-  /* ============================
-        GET CURRENT USER
-  ============================ */
-  const fetchCurrentUser = useCallback(async () => {
-    const token = sessionStorage.getItem("token");
-    if (!token) return; 
+  // STATE
+  const [currentUser, setCurrentUser] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const wsInitialized = useRef(false);
+  let token=getAccessToken();
 
-    try {
-      const res = await getCurrentUser();
-      setCurrentUser(res);
-      return res;
-      
-    } catch (err) {
-      console.error("Lỗi lấy user:", err);
-    }
-  }, []);
-
+  // =======================
+  // LOAD USER
+  // =======================
   useEffect(() => {
-    fetchCurrentUser();
-  }, []);
+    if(!token) navigate("/");
+    const loadUser = async () => {
+      try {
+        const user = await resolveCurrentUser();
+        setCurrentUser(user);
+      } catch {
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    loadUser();
+  }, [token]);
 
-  /* ============================
-        FETCH FRIEND LIST
-  ============================ */
-  const fetchFriends = useCallback(async (userId) => {
-    if (!userId) return;
-    try {
-      const res = await getAllFriend({ id: userId });
-      setFriends(res.data.result ?? []);
-    } catch (err) {
-      console.error("Lỗi fetch bạn bè:", err);
-    }
-  }, []);
-
-  /* ============================
-        FETCH FRIEND REQUEST LIST
-  ============================ */
-  const fetchFriendRequests = useCallback(async (userId) => {
-    if (!userId) return;
-
-    try {
-      const res = await getAllFriendSend({ id: userId });
-      setFriendRequests(res.data.result ?? []);
-    } catch (err) {
-      console.error("Lỗi fetch request:", err);
-    }
-  }, []);
-
-  /* ======================================================
-        KHỞI TẠO WEBSOCKET & FETCH FRIENDS + REQUESTS
-  ====================================================== */
+  // =======================
+  // WEBSOCKET
+  // =======================
   useEffect(() => {
-    if (!currentUser?.id) return;
-    if (wsInitializedRef.current) return; // tránh connect lại
+    if (!currentUser?.id || wsInitialized.current) return;
 
-    wsInitializedRef.current = true;
+    wsInitialized.current = true;
 
-    // Fetch danh sách sau khi login
-    fetchFriends(currentUser.id);
-    fetchFriendRequests(currentUser.id);
-
-    // Khởi tạo WebSocket
     connectWebSocket({
       userId: currentUser.id,
 
-      onReceiveRequest: (data) => {
-        setFriendRequests((prev) =>
-          prev.some((x) => x.id === data.id) ? prev : [data, ...prev]
-        );
-      },
-
-      onReceiveAccept: () => {
-        fetchFriends(currentUser.id);
-        fetchFriendRequests(currentUser.id);
-      },
-
-      // Xử lý thay đổi trạng thái online/offline
-      onPresenceChange: (presenceData) => {
-        const { userId, online } = presenceData;
+      // update online/offline
+      onPresenceChange: ({ userId, online }) => {
         setOnlineUsers((prev) => {
-          const newSet = new Set(prev);
-          if (online) {
-            newSet.add(userId);
-          } else {
-            newSet.delete(userId);
-          }
-          return newSet;
+          const next = new Set(prev);
+          online ? next.add(userId) : next.delete(userId);
+          return next;
         });
       },
 
-      // Callback khi WebSocket kết nối thành công
+      // khi connect thành công
       onConnected: (userId) => {
-        console.log("🟢 WebSocket connected, setting user online");
-        // Cập nhật currentUser.online = true
-        setCurrentUser((prev) => prev ? { ...prev, online: true } : prev);
-        // Thêm chính mình vào danh sách online
         setOnlineUsers((prev) => new Set(prev).add(userId));
       },
     });
 
-    // Xử lý khi user đóng tab/browser
-    const handleBeforeUnload = () => {
-      if (currentUser?.id) {
-        // Sử dụng sendBeacon để đảm bảo gửi được khi đóng tab
-        sendUserOfflineBeacon(currentUser.id);
-      }
+    // đóng tab → báo offline
+    const handleUnload = () => {
+      sendUserOfflineBeacon(currentUser.id);
     };
 
-    // Xử lý khi user chuyển tab (visibility change)
-    const handleVisibilityChange = () => {
-      if (!currentUser?.id) return;
-      
-      if (document.visibilityState === "hidden") {
-        // User rời khỏi tab - có thể đánh dấu idle/away
-        console.log("👁️ Tab hidden - user may be away");
-      } else if (document.visibilityState === "visible") {
-        // User quay lại tab - gửi lại online
-        sendUserOnline(currentUser.id);
-        console.log("👁️ Tab visible - user is back");
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleUnload);
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleUnload);
     };
-  }, [currentUser, fetchFriends, fetchFriendRequests]);
+  }, [currentUser]);
 
-
-  /* ============================
-              LOGOUT
-  ============================ */
+  // =======================
+  // LOGOUT
+  // =======================
   const logout = async () => {
-    // Gửi offline status trước khi logout và chờ gửi xong
+    if(!token) return;
     if (currentUser?.id) {
       sendUserOffline(currentUser.id);
-      // Chờ một chút để message được gửi đi trước khi disconnect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((r) => setTimeout(r, 100));
     }
 
-    sessionStorage.removeItem("token");
     disconnectWebSocket();
-
-    await apiLogout(currentUser?.id);
-
+    await apiLogout();
+    clearAccessToken();
     setCurrentUser(null);
-    setFriends([]);
-    setFriendRequests([]);
     setOnlineUsers(new Set());
-
-    wsInitializedRef.current = false;
+    wsInitialized.current = false;
 
     navigate("/");
   };
 
-  /* ============================
-        CHECK IF USER IS ONLINE
-  ============================ */
-  const isUserOnline = useCallback((userId) => {
-    return onlineUsers.has(userId);
-  }, [onlineUsers]);
+  // =======================
+  // CHECK ONLINE
+  // =======================
+  const isUserOnline = (userId) => onlineUsers.has(userId);
 
-  /* ============================
-              VALUE
-  ============================ */
-  const value = {
-    currentUser,
-    setCurrentUser,
-    friends,
-    setFriends,
-    friendRequests,
-    onlineUsers,
-
-    fetchCurrentUser,
-    fetchFriends,
-    fetchFriendRequests,
-
-    logout,
-    isUserOnline,
-
-    removeFriendRequest: (id) =>
-      setFriendRequests((prev) => prev.filter((r) => r.id !== id)),
-  };
-
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  // =======================
+  // PROVIDE
+  // =======================
+  return (
+    <UserContext.Provider
+      value={{
+        currentUser,
+        loading,
+        onlineUsers,
+        isUserOnline,
+        logout,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
 };

@@ -1,8 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { useUser } from "./authContext";
 import { connectWebSocket, sendUserOfflineBeacon, sendUserOnline } from "../api/websocket";
 import { getAllFriend, getAllFriendSend } from "../api/service/friend";
 import { normalizeFriendRequest } from "./userPresence";
+import { useUser } from "../hooks/useUser";
 
 const SocialContext = createContext();
 

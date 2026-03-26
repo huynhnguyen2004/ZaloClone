@@ -8,9 +8,10 @@ import { useUser } from "../../hooks/useUser";
 import { register, resetPassword } from "../../api/service/authService";
 import { handleApiError } from "../../utils/handleApiError";
 import { initialFormState } from "./constants";
-import LoginForm from "../AuthPage/Components/LoginForm";
-import RegisterForm from "../AuthPage/Components/RegisterForm";
-import ForgotPasswordForm from "../AuthPage/Components/RegisterForm";
+import RegisterForm from "../../component/AuthForm/RegisterForm";
+import ForgotPasswordForm from "../../component/AuthForm/RegisterForm";
+import LoginForm from "../../component/AuthForm/LoginForm";
+
 
 function AuthPage() {
   const [mode, setMode] = useState("login");
@@ -22,12 +23,11 @@ function AuthPage() {
   const [forgotVerifyToken, setForgotVerifyToken] = useState("");
 
   const navigate = useNavigate();
-  const { fetchCurrentUser } = useUser();
   const { countdown, send, verify, setCountdown } = useOtp();
 
   const { handleLogin, loading, status, setStatus } = useAuth({
-    navigate,
-    fetchCurrentUser,
+    navigate
+
   });
 
 
