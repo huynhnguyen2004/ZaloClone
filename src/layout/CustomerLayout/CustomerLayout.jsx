@@ -1,15 +1,16 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import CustomerHeader from "../../component/layout/Customer/CustomerHeader";
 import CustomerSideBar from "../../component/layout/Customer/CustomerSideBar";
 import ChatArea from "../../page/Chat/ChatArea";
 import Modal from "../../component/Modal/Modal";
-import { useUser } from "../../hooks/useUser";
+
 import "./CustomerLayout.css";
 import ChatWindow from "../../component/ChatWindow/ChatWindow";
 import { useChat } from "../../context/chatContext";
+import { AuthContext } from "../../context/authContext";
 
 export default function CustomerLayout() {
-  const { currentUser, loading, error } = useUser();
+  const { currentUser, loading, error } = useContext(AuthContext);;
   const [activeTab, setActiveTab] = useState("chats");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const { activeChat, setActiveChat } = useChat();

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -17,14 +17,14 @@ import {
     BiSave
 } from "react-icons/bi";
 import { MdVerified } from "react-icons/md";
-import { useUser } from "../../hooks/useUser";
 import { getAvatarUrl, getCoverUrl } from "../../utils/avatarHelper";
-import { uploadAvatar, uploadCover, editInfor } from "../../api/service/userService";
+import { uploadAvatar, uploadCover, editInfor, getCurrentUser } from "../../api/service/userService";
 import "./ProfilePage.css";
+import { AuthContext } from "../../context/authContext";
 
 function ProfilePage() {
     const navigate = useNavigate();
-    const { currentUser, fetchCurrentUser } = useUser();
+    const { currentUser } = useContext(AuthContext);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [showAvatarPreview, setShowAvatarPreview] = useState(false);
@@ -66,7 +66,7 @@ function ProfilePage() {
         try {
             setIsEditing(true);
             await editInfor(currentUser.id, formData);
-            await fetchCurrentUser();
+            await getCurrentUser();
             setShowEditModal(false);
             setMessage({ type: "success", text: "Cập nhật thông tin thành công!" });
         } catch (err) {
@@ -110,7 +110,7 @@ function ProfilePage() {
         try {
             setUploadingAvatar(true);
             await uploadAvatar(file, currentUser.id);
-            await fetchCurrentUser();
+            await getCurrentUser();
             setMessage({ type: "success", text: "Cập nhật ảnh đại diện thành công!" });
         } catch (err) {
             console.error("Upload avatar error:", err);
@@ -138,7 +138,7 @@ function ProfilePage() {
         try {
             setUploadingCover(true);
             await uploadCover(file, currentUser.id);
-            await fetchCurrentUser();
+           await getCurrentUser();
             setMessage({ type: "success", text: "Cập nhật ảnh bìa thành công!" });
         } catch (err) {
             console.error("Upload cover error:", err);

@@ -1,17 +1,17 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BiUserMinus } from "react-icons/bi";
 import "./FriendList.css";
 
-import { useUser } from "../../hooks/useUser";
 import { useSocial } from "../../context/socialContext";
 import { useChat } from "../../context/chatContext";
 import { unFriend } from "../../api/service/friend";
 import { getAvatarUrl } from "../../utils/avatarHelper";
+import { AuthContext } from "../../context/authContext";
 
 export default function FriendList() {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
+  const { currentUser } = useContext(AuthContext);
   const { friends, setFriends, isUserOnline } = useSocial();
   const { openChat } = useChat();
   const [removingIds, setRemovingIds] = useState([]);

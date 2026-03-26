@@ -2,14 +2,14 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { connectWebSocket, sendUserOfflineBeacon, sendUserOnline } from "../api/websocket";
 import { getAllFriend, getAllFriendSend } from "../api/service/friend";
 import { normalizeFriendRequest } from "./userPresence";
-import { useUser } from "../hooks/useUser";
+import { AuthContext } from "./authContext";
 
 const SocialContext = createContext();
 
 export const useSocial = () => useContext(SocialContext);
 
 export const SocialProvider = ({ children }) => {
-  const { currentUser } = useUser();
+  const { currentUser } = useContext(AuthContext);
   const [friendRequests, setFriendRequests] = useState([]);
   const [friends, setFriends] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState(new Set());

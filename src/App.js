@@ -8,17 +8,17 @@ import UserProfilePage from "./page/UserProfilePage/UserProfilePage";
 import { SocialProvider } from "./context/socialContext";
 import "./App.css";
 import { ChatProvider } from "./context/chatContext";
-
+import { AuthProvider } from "./context/authContext";
 // Admin Pages
 import AdminDashboard from "./page/Admin/AdminDashboard/AdminDashboard";
 import AdminUsers from "./page/Admin/AdminUsers/AdminUsers";
 import AdminSettings from "./page/Admin/AdminSettings/AdminSettings";
-import { UserProvider } from "./context/userContext";
+
 
 function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
-      <UserProvider>
         <ChatProvider>
           <SocialProvider>
             <Routes>
@@ -63,8 +63,8 @@ function App() {
             </Routes>
           </SocialProvider>
         </ChatProvider>
-      </UserProvider>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 

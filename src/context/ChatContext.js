@@ -7,7 +7,7 @@ import {
   subscribeToConversationSeen,
   unsubscribeFromConversationSeen,
 } from "../api/websocket";
-import { useUser } from "../hooks/useUser";
+import { AuthContext } from "./authContext";
 
 
 const ChatContext = createContext();
@@ -23,7 +23,7 @@ export function ChatProvider({ children }) {
   const [seenByFriend, setSeenByFriend] = useState(false);
   const [newMessageTrigger, setNewMessageTrigger] = useState(0); // Trigger để refresh conversation list
 
-  const { currentUser } = useUser();
+  const { currentUser } = useContext(AuthContext);
 
   // ==========================
   // REFS

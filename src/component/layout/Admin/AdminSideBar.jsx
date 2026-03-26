@@ -16,12 +16,12 @@ import {
   MdAdminPanelSettings,
 } from "react-icons/md";
 import { SiZalo } from "react-icons/si";
-import { useUser } from "../../../hooks/useUser";
 import logo from "../../../asset/logo.png";
+import { AuthContext } from "../../../context/authContext";
 
 function AdminSideBar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const {currentUser, logout } = useUser();
+  const {currentUser, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const menuItems = [

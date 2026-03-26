@@ -4,17 +4,17 @@ import { useChat } from "../../context/chatContext";
 import "./ChatWindow.css";
 import { BiArrowBack } from "react-icons/bi";
 import { FiPhone, FiVideo } from "react-icons/fi";
-import { useEffect, useRef, useState } from "react";
-import { useUser } from "../../hooks/useUser";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useSocial } from "../../context/socialContext";
 import { sendMessage,readMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
+import { AuthContext } from "../../context/authContext";
 
 export default function ChatWindow({ onCloseChat }) {
   const navigate = useNavigate();
   const { activeChat, messages, setMessages } = useChat();
-  const { currentUser } = useUser();
+  const { currentUser } = useContext(AuthContext);
   const { isUserOnline } = useSocial();
   const [text, setText] = useState("");
   const endRef = useRef();

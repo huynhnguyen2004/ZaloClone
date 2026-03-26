@@ -1,57 +1,52 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { createContext, useEffect, useRef, useState } from "react";
+import { clearAccessToken, getAccessToken, setAccessToken } from "../api/tokenStorage";
+import { getCurrentUser } from "../api/service/userService";
+import { connectWebSocket, disconnectWebSocket, sendUserOffline, sendUserOfflineBeacon } from "../api/websocket";
+import { refresh } from "../api/service/refreshTokenService";
+import { logout } from "../api/service/authService";
 
-import { resolveCurrentUser } from "./userSession";
-import { logout as apiLogout } from "../api/service/authService";
-
-import {
-  connectWebSocket,
-  disconnectWebSocket,
-  sendUserOffline,
-  sendUserOfflineBeacon,
-} from "../api/websocket";
-import { clearAccessToken, getAccessToken } from "../api/tokenStorage";
-
-// =======================
-// CONTEXT
-// =======================
-export const UserContext = createContext();
-
-// =======================
-// PROVIDER
-// =======================
-export const UserProvider = ({ children }) => {
-  const navigate = useNavigate();
-
-  // STATE
+export const AuthContext=createContext();
+export const AuthProvider=({children})=>{
   const [currentUser, setCurrentUser] = useState(null);
+  const [isAuth,setIsAuth]=useState(false);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const didRun=useRef();
   const wsInitialized = useRef(false);
-  let token=getAccessToken();
-
-  // =======================
-  // LOAD USER
-  // =======================
+  const token=getAccessToken();
   useEffect(() => {
-    if(!token) navigate("/");
+    if(didRun.current) return;
+    didRun.current=true;
     const loadUser = async () => {
       try {
-        const user = await resolveCurrentUser();
+        const res = await refresh();
+        const token=res.data.result.accessToken;
+        setAccessToken(token);
+        const user=await getCurrentUser();
+        
+        
         setCurrentUser(user);
-      } catch {
+        
+        
+        setIsAuth(true);
+      } catch(err) {
         setCurrentUser(null);
-      } finally {
+        setIsAuth(false);
+         
+    }
+       finally {
         setLoading(false);
       }
     };
-
     loadUser();
-  }, [token]);
-
+  }, []);
   // =======================
   // WEBSOCKET
   // =======================
+
+
+  
+  
   useEffect(() => {
     if (!currentUser?.id || wsInitialized.current) return;
 
@@ -91,20 +86,21 @@ export const UserProvider = ({ children }) => {
   // LOGOUT
   // =======================
   const logout = async () => {
-    if(!token) return;
+    if (!token) return;
     if (currentUser?.id) {
       sendUserOffline(currentUser.id);
       await new Promise((r) => setTimeout(r, 100));
     }
 
     disconnectWebSocket();
-    await apiLogout();
+    await logout();
+    
     clearAccessToken();
     setCurrentUser(null);
     setOnlineUsers(new Set());
     wsInitialized.current = false;
 
-    navigate("/");
+    window.location.href="/";
   };
 
   // =======================
@@ -116,16 +112,20 @@ export const UserProvider = ({ children }) => {
   // PROVIDE
   // =======================
   return (
-    <UserContext.Provider
+    <AuthContext.Provider
       value={{
         currentUser,
+        isAuth,
         loading,
         onlineUsers,
         isUserOnline,
-        logout,
+        logout
+        
       }}
     >
       {children}
-    </UserContext.Provider>
+    </AuthContext.Provider>
   );
 };
+
+

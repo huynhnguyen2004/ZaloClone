@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { BiSearch, BiPlus, BiUserPlus, BiUserMinus } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
-import { useUser } from "../../../hooks/useUser";
 import { sendFriendRequest, unFriend } from "../../../api/service/friend";
 import { sendSocketData } from "../../../api/websocket";
 import { search as searchUsers } from "../../../api/service/userService";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import UserDropdown from "../../UserDropdown/UserDropdown";
 import "./CustomerHeader.css";
+import { AuthContext } from "../../../context/authContext";
 
 function CustomerHeader({ onProfileClick }) {
     const navigate = useNavigate();
@@ -19,7 +19,7 @@ function CustomerHeader({ onProfileClick }) {
 
     const [sendingIds, setSendingIds] = useState([]);
     const [removingIds, setRemovingIds] = useState([]);
-    const {currentUser} =useUser();
+    const { currentUser } = useContext(AuthContext);
     useEffect(() => {
         if (!query || query.trim().length < 2) {
             setResults([]);

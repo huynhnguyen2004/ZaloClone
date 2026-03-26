@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { 
     BiMessageRounded, 
     BiCog,
@@ -10,15 +10,15 @@ import {
 } from "react-icons/bi";
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineArticle } from "react-icons/md";
-import { useUser } from "../../../hooks/useUser";
 import { useSocial } from "../../../context/socialContext";
 import { useChat } from "../../../context/chatContext";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
+import { AuthContext } from "../../../context/authContext";
 
 function CustomerSideBar({ onTabChange }) {
     const [activeTab, setActiveTab] = useState("chats");
-    const { currentUser } = useUser();
+    const { currentUser } = useContext(AuthContext);
     const { friendRequests } = useSocial();
     const { unreadCount, clearUnread } = useChat();
 

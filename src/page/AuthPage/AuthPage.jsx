@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../asset/logo.png";
 import "./AuthPage.css";
 import useAuth from "../../hooks/useAuth";
 import { useOtp } from "../../hooks/useOtp";
-import { useUser } from "../../hooks/useUser";
 import { register, resetPassword } from "../../api/service/authService";
 import { handleApiError } from "../../utils/handleApiError";
 import { initialFormState } from "./constants";
 import RegisterForm from "../../component/AuthForm/RegisterForm";
 import ForgotPasswordForm from "../../component/AuthForm/RegisterForm";
 import LoginForm from "../../component/AuthForm/LoginForm";
+import { AuthContext } from "../../context/authContext";
 
 
 function AuthPage() {
@@ -21,6 +21,7 @@ function AuthPage() {
   const [forgotStep, setForgotStep] = useState(1);
   const [registerVerifyToken, setRegisterVerifyToken] = useState("");
   const [forgotVerifyToken, setForgotVerifyToken] = useState("");
+  const {isAuth,currentUser}=useContext(AuthContext);
 
   const navigate = useNavigate();
   const { countdown, send, verify, setCountdown } = useOtp();
@@ -29,7 +30,12 @@ function AuthPage() {
     navigate
 
   });
+  useEffect(()=>{
+    if(isAuth){
+      navigate(currentUser?.role === "Customer" ? "/home" : "/admin")
+    }
 
+  },[isAuth,currentUser])
 
   useEffect(() => {
     if (countdown <= 0) {

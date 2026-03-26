@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -18,16 +18,16 @@ import {
     BiCheckCircle,
     BiErrorCircle
 } from "react-icons/bi";
-import { useUser } from "../../hooks/useUser";
 import { acceptFriend, rejectFriendRequest, unRequestFriend } from "../../api/service/friend";
 import { changePass } from "../../api/service/userService";
 import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import "./UserDropdown.css";
+import { AuthContext } from "../../context/authContext";
 
 function UserDropdown() {
     const navigate = useNavigate();
-    const { currentUser, logout} = useUser();
+    const { currentUser, logout} =  useContext(AuthContext);;
     const [isOpen, setIsOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [showChangePassword, setShowChangePassword] = useState(false);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,7 +14,6 @@ import {
     BiX
 } from "react-icons/bi";
 import { FaUserClock, FaUserTimes } from "react-icons/fa";
-import { useUser } from "../../hooks/useUser";
 import { useSocial } from "../../context/socialContext";
 import { useChat } from "../../context/chatContext";
 import { seenProfile } from "../../api/service/userService";
@@ -27,6 +26,7 @@ import {
 } from "../../api/service/friend";
 import { getAvatarUrl, getCoverUrl } from "../../utils/avatarHelper";
 import "./UserProfilePage.css";
+import { AuthContext } from "../../context/authContext";
 
 // RelationshipStatus constants
 const RelationshipStatus = {
@@ -39,7 +39,7 @@ const RelationshipStatus = {
 function UserProfilePage() {
     const navigate = useNavigate();
     const { userId } = useParams();
-    const { currentUser } = useUser();
+     const { currentUser } = useContext(AuthContext);
     const { removeFriendRequest } = useSocial();
     const { openChat } = useChat();
     

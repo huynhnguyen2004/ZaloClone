@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
-import { useUser } from "../../hooks/useUser";
 import { useSocial } from "../../context/socialContext";
 import { useChat } from "../../context/chatContext";
 import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
+import { AuthContext } from "../../context/authContext";
 
 export default function ConversationList() {
   const navigate = useNavigate();
-  const { currentUser } = useUser();
+ const { currentUser } = useContext(AuthContext);
   const { isUserOnline } = useSocial();
   const { openChat, activeChat, messages, newMessageTrigger } = useChat();
   const [conversations, setConversations] = useState([]);

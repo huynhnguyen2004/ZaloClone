@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BiSearch,
@@ -9,7 +9,6 @@ import {
   BiX,
 } from "react-icons/bi";
 import { MdOutlineArticle } from "react-icons/md";
-import { useUser } from "../../hooks/useUser";
 
 import {
   acceptFriend,
@@ -24,13 +23,14 @@ import "./ChatArea.css";
 import FriendList from "../../component/FriendList/FriendList";
 import ConversationList from "../../component/ConversationList/ConversationList";
 import { useChat } from "../../context/chatContext";
+import { AuthContext } from "../../context/authContext";
 
 function ChatArea({ activeTab }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
   // 🔥 Dữ liệu realtime lấy từ UserContext
-  const { currentUser } = useUser();
+  const { currentUser } = useContext(AuthContext);
   const { friendRequests, removeFriendRequest } = useSocial();
   const {activeChat,setActiveChat}=useChat();
 
