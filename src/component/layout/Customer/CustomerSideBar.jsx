@@ -14,11 +14,11 @@ import { useSocial } from "../../../context/socialContext";
 import { useChat } from "../../../context/chatContext";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
-import { AuthContext } from "../../../context/authContext";
+import { UserContext } from "../../../context/userContext";
 
 function CustomerSideBar({ onTabChange }) {
     const [activeTab, setActiveTab] = useState("chats");
-    const { currentUser } = useContext(AuthContext);
+    const { currentUser } = useContext(UserContext);
     const { friendRequests } = useSocial();
     const { unreadCount, clearUnread } = useChat();
 

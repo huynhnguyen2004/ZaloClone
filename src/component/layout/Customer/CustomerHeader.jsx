@@ -8,7 +8,7 @@ import { search as searchUsers } from "../../../api/service/userService";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import UserDropdown from "../../UserDropdown/UserDropdown";
 import "./CustomerHeader.css";
-import { AuthContext } from "../../../context/authContext";
+import { UserContext } from "../../../context/userContext";
 
 function CustomerHeader({ onProfileClick }) {
     const navigate = useNavigate();
@@ -19,7 +19,7 @@ function CustomerHeader({ onProfileClick }) {
 
     const [sendingIds, setSendingIds] = useState([]);
     const [removingIds, setRemovingIds] = useState([]);
-    const { currentUser } = useContext(AuthContext);
+    const { currentUser } = useContext(UserContext);
     useEffect(() => {
         if (!query || query.trim().length < 2) {
             setResults([]);

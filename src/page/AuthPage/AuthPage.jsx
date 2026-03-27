@@ -10,7 +10,7 @@ import { initialFormState } from "./constants";
 import RegisterForm from "../../component/AuthForm/RegisterForm";
 import ForgotPasswordForm from "../../component/AuthForm/RegisterForm";
 import LoginForm from "../../component/AuthForm/LoginForm";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 
 function AuthPage() {
@@ -21,7 +21,7 @@ function AuthPage() {
   const [forgotStep, setForgotStep] = useState(1);
   const [registerVerifyToken, setRegisterVerifyToken] = useState("");
   const [forgotVerifyToken, setForgotVerifyToken] = useState("");
-  const {isAuth,currentUser}=useContext(AuthContext);
+  const {currentUser}=useContext(UserContext);
 
   const navigate = useNavigate();
   const { countdown, send, verify, setCountdown } = useOtp();
@@ -31,11 +31,11 @@ function AuthPage() {
 
   });
   useEffect(()=>{
-    if(isAuth){
+    if(currentUser){
       navigate(currentUser?.role === "Customer" ? "/home" : "/admin")
     }
 
-  },[isAuth,currentUser])
+  },[currentUser,navigate])
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -204,7 +204,6 @@ function AuthPage() {
       handleApiError(error, setStatus, setFieldError);
     }
   };
-
   return (
     <div className="auth">
       <div className="auth__card">

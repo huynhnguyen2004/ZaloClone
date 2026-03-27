@@ -1,5 +1,5 @@
-import React, { useContext, useState } from "react";
-import CustomerHeader from "../../component/layout/Customer/CustomerHeader";
+import React, { useContext, useEffect, useState } from "react";
+
 import CustomerSideBar from "../../component/layout/Customer/CustomerSideBar";
 import ChatArea from "../../page/Chat/ChatArea";
 import Modal from "../../component/Modal/Modal";
@@ -7,13 +7,17 @@ import Modal from "../../component/Modal/Modal";
 import "./CustomerLayout.css";
 import ChatWindow from "../../component/ChatWindow/ChatWindow";
 import { useChat } from "../../context/chatContext";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
+import { useNavigate } from "react-router-dom";
+import CustomerHeader from "../../component/layout/Customer/CustomerHeader";
+
 
 export default function CustomerLayout() {
-  const { currentUser, loading, error } = useContext(AuthContext);;
+  const { currentUser, loading, error } = useContext(UserContext);
   const [activeTab, setActiveTab] = useState("chats");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const { activeChat, setActiveChat } = useChat();
+  const navigate=useNavigate();
 
 
   const handleProfileClick = () => {
@@ -24,6 +28,10 @@ export default function CustomerLayout() {
     setIsProfileModalOpen(false);
   };
 
+  useEffect(()=>{
+    if(!currentUser) navigate("/");
+
+  },[currentUser])
   // Hiển thị loading khi đang tải thông tin user
   if (loading) {
     return (
@@ -55,7 +63,7 @@ export default function CustomerLayout() {
     <div className="customer-layout">
       {/* Header */}
       <div className="layout-header">
-        <CustomerHeader 
+        <CustomerHeader
           onProfileClick={handleProfileClick}
         />
       </div>

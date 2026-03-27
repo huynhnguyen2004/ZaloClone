@@ -23,11 +23,11 @@ import { changePass } from "../../api/service/userService";
 import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import "./UserDropdown.css";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 function UserDropdown() {
     const navigate = useNavigate();
-    const { currentUser, logout} =  useContext(AuthContext);;
+    const { currentUser, logout,isUserOnline} =  useContext(UserContext);;
     const [isOpen, setIsOpen] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [showChangePassword, setShowChangePassword] = useState(false);
@@ -146,6 +146,7 @@ function UserDropdown() {
         return { level: 4, text: "Mạnh", color: "#22c55e" };
     };
 
+    
     // Validate form đổi mật khẩu
     const validatePasswordForm = () => {
         const errors = {};
@@ -233,10 +234,10 @@ function UserDropdown() {
                                 <h4>{currentUser?.firstname} {currentUser?.lastname}</h4>
                                 <p>{currentUser?.phone}</p>
                                 <p className="user-status" style={{
-                                    color: currentUser?.online ? '#31a24c' : '#ccc',
+                                    color: isUserOnline(currentUser.id)? '#31a24c' : '#ccc',
                                     fontSize: '12px'
                                 }}>
-                                    {currentUser?.online ? '● Đang hoạt động' : '● Ngoại tuyến'}
+                                    { isUserOnline(currentUser.id) ? '● Đang hoạt động' : '● Ngoại tuyến'}
                                 </p>
                             </div>
                         </div>

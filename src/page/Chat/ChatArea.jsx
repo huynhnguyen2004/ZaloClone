@@ -23,14 +23,15 @@ import "./ChatArea.css";
 import FriendList from "../../component/FriendList/FriendList";
 import ConversationList from "../../component/ConversationList/ConversationList";
 import { useChat } from "../../context/chatContext";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
+
 
 function ChatArea({ activeTab }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
   // 🔥 Dữ liệu realtime lấy từ UserContext
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser } = useContext(UserContext);
   const { friendRequests, removeFriendRequest } = useSocial();
   const {activeChat,setActiveChat}=useChat();
 

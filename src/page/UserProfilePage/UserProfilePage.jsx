@@ -26,7 +26,7 @@ import {
 } from "../../api/service/friend";
 import { getAvatarUrl, getCoverUrl } from "../../utils/avatarHelper";
 import "./UserProfilePage.css";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 // RelationshipStatus constants
 const RelationshipStatus = {
@@ -39,7 +39,7 @@ const RelationshipStatus = {
 function UserProfilePage() {
     const navigate = useNavigate();
     const { userId } = useParams();
-     const { currentUser } = useContext(AuthContext);
+     const { currentUser } = useContext(UserContext);
     const { removeFriendRequest } = useSocial();
     const { openChat } = useChat();
     

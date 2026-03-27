@@ -17,11 +17,11 @@ import {
 } from "react-icons/md";
 import { SiZalo } from "react-icons/si";
 import logo from "../../../asset/logo.png";
-import { AuthContext } from "../../../context/authContext";
+import { UserContext } from "../../../context/userContext";
 
 function AdminSideBar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const {currentUser, logout } = useContext(AuthContext);
+  const {currentUser, logout } = useContext(UserContext);
   const navigate = useNavigate();
 
   const menuItems = [

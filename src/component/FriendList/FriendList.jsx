@@ -7,12 +7,12 @@ import { useSocial } from "../../context/socialContext";
 import { useChat } from "../../context/chatContext";
 import { unFriend } from "../../api/service/friend";
 import { getAvatarUrl } from "../../utils/avatarHelper";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 export default function FriendList() {
   const navigate = useNavigate();
-  const { currentUser } = useContext(AuthContext);
-  const { friends, setFriends, isUserOnline } = useSocial();
+  const { currentUser, isUserOnline} = useContext(UserContext);
+  const { friends, setFriends } = useSocial();
   const { openChat } = useChat();
   const [removingIds, setRemovingIds] = useState([]);
 

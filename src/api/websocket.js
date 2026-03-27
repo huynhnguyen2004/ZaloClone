@@ -1,15 +1,14 @@
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { API_BASE_URL } from "./api";
-import { logout } from "./service/authService";
+import { getAccessToken } from "./tokenStorage";
 
 // =======================
-// BIẾN TOÀN CỤC
+// GLOBAL STATE
 // =======================
 let stompClient = null;
 let connectedUserId = null;
 
-// nơi lưu các callback từ component
 const callbacks = {
   onReceiveRequest: null,
   onReceiveAccept: null,
@@ -19,14 +18,13 @@ const callbacks = {
   onConnected: null,
 };
 
-// dùng cho seen
 let seenSubscription = null;
 let pendingSeen = null;
 
 const WS_BASE_URL = API_BASE_URL;
 
 // =======================
-// CONNECT WEBSOCKET
+// CONNECT
 // =======================
 export const connectWebSocket = ({
   userId,
@@ -38,116 +36,92 @@ export const connectWebSocket = ({
   onConnected,
 }) => {
   if (!userId) {
-    console.warn("❌ Không có userId");
+    console.warn("❌ Missing userId");
     return;
   }
 
-  // =======================
-  // LƯU CALLBACK
-  // =======================
-  if (onReceiveRequest) callbacks.onReceiveRequest = onReceiveRequest;
-  if (onReceiveAccept) callbacks.onReceiveAccept = onReceiveAccept;
-  if (onReceiveMessage) callbacks.onReceiveMessage = onReceiveMessage;
-  if (onSeenMessage) callbacks.onSeenMessage = onSeenMessage;
-  if (onPresenceChange) callbacks.onPresenceChange = onPresenceChange;
-  if (onConnected) callbacks.onConnected = onConnected;
+  // ===== SAVE CALLBACK =====
+  callbacks.onReceiveRequest = onReceiveRequest;
+  callbacks.onReceiveAccept = onReceiveAccept;
+  callbacks.onReceiveMessage = onReceiveMessage;
+  callbacks.onSeenMessage = onSeenMessage;
+  callbacks.onPresenceChange = onPresenceChange;
+  callbacks.onConnected = onConnected;
 
-  // =======================
-  // TRÁNH CONNECT LẠI
-  // =======================
-  if (stompClient && connectedUserId === userId && stompClient.active) {
+  // ===== AVOID RECONNECT =====
+  if (
+    stompClient &&
+    connectedUserId === userId &&
+    stompClient.connected
+  ) {
     return;
   }
 
-  // =======================
-  // NGẮT USER CŨ
-  // =======================
+  // ===== SWITCH USER =====
   if (stompClient && connectedUserId !== userId) {
-    console.log("🔁 Đổi user → disconnect user cũ");
+    console.log("🔁 Switch user → disconnect old socket");
     stompClient.deactivate();
     stompClient = null;
   }
 
   connectedUserId = userId;
 
-  // =======================
-  // TẠO KẾT NỐI
-  // =======================
-  const token = sessionStorage.getItem("token");
+  // ===== CREATE SOCKET =====
+  const token = getAccessToken();
   const socketUrl = `${WS_BASE_URL}/ws${token ? `?token=${token}` : ""}`;
 
   stompClient = new Client({
     webSocketFactory: () =>
       new SockJS(socketUrl, null, { withCredentials: true }),
-    reconnectDelay: 1000,
+    reconnectDelay: 2000,
     connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
   });
 
   // =======================
-  // KHI CONNECT THÀNH CÔNG
+  // ON CONNECT
   // =======================
   stompClient.onConnect = () => {
     console.log("🟢 CONNECTED:", userId);
 
     // ===== FRIEND REQUEST =====
     stompClient.subscribe(`/topic/friend-request/${userId}`, (msg) => {
-      const data = JSON.parse(msg.body);
-      if (callbacks.onReceiveRequest) {
-        callbacks.onReceiveRequest(data);
-      }
+      callbacks.onReceiveRequest?.(JSON.parse(msg.body));
     });
 
     // ===== FRIEND ACCEPT =====
     stompClient.subscribe(`/topic/friend-accept/${userId}`, (msg) => {
-      const data = JSON.parse(msg.body);
-      if (callbacks.onReceiveAccept) {
-        callbacks.onReceiveAccept(data);
-      }
+      callbacks.onReceiveAccept?.(JSON.parse(msg.body));
     });
 
     // ===== CHAT =====
     stompClient.subscribe(`/topic/chat/${userId}`, (msg) => {
-      const data = JSON.parse(msg.body);
-      if (callbacks.onReceiveMessage) {
-        callbacks.onReceiveMessage(data);
-      }
+      callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
     stompClient.subscribe(`/topic/chat-self/${userId}`, (msg) => {
-      const data = JSON.parse(msg.body);
-      if (callbacks.onReceiveMessage) {
-        callbacks.onReceiveMessage(data);
-      }
+      callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
     // ===== SEEN =====
     stompClient.subscribe(`/user/${userId}/queue/seen`, (msg) => {
-      if (callbacks.onSeenMessage) {
-        callbacks.onSeenMessage(msg.body);
-      }
+      callbacks.onSeenMessage?.(msg.body);
     });
 
-    // ===== ONLINE/OFFLINE =====
+    // ===== PRESENCE =====
     stompClient.subscribe(`/topic/presence`, (msg) => {
-      const data = JSON.parse(msg.body);
-      if (callbacks.onPresenceChange) {
-        callbacks.onPresenceChange(data);
-      }
+      callbacks.onPresenceChange?.(JSON.parse(msg.body));
     });
 
-    // gửi online
+    // ✅ CHỈ GỬI ONLINE Ở ĐÂY
     sendUserOnline(userId);
 
-    // báo đã connect
-    if (callbacks.onConnected) {
-      callbacks.onConnected(userId);
-    }
+    callbacks.onConnected?.(userId);
 
-    // xử lý pending seen
+    // ===== HANDLE PENDING SEEN =====
     if (pendingSeen) {
       subscribeToConversationSeen(
         pendingSeen.conversationId,
-        pendingSeen.callback,
+        pendingSeen.callback
       );
       pendingSeen = null;
     }
@@ -163,8 +137,10 @@ export const connectWebSocket = ({
   // =======================
   // CLOSE
   // =======================
-  stompClient.onWebSocketClose = async () => {
+  stompClient.onWebSocketClose = () => {
     console.warn("🔌 WS CLOSED");
+
+    // ❗ KHÔNG gửi OFFLINE
     connectedUserId = null;
   };
 
@@ -174,23 +150,25 @@ export const connectWebSocket = ({
 // =======================
 // DISCONNECT
 // =======================
-export const disconnectWebSocket = async () => {
+export const disconnectWebSocket = () => {
   if (!stompClient) return;
 
-  if (connectedUserId) {
-    sendUserOffline(connectedUserId);
-  }
-
+  // ❗ KHÔNG gửi OFFLINE
   stompClient.deactivate();
 
   stompClient = null;
   connectedUserId = null;
-  seenSubscription = null;
+
+  if (seenSubscription) {
+    seenSubscription.unsubscribe();
+    seenSubscription = null;
+  }
+
   console.log("🔴 DISCONNECTED");
 };
 
 // =======================
-// ONLINE / OFFLINE
+// ONLINE
 // =======================
 export const sendUserOnline = (userId) => {
   if (!stompClient || !stompClient.connected) return;
@@ -200,7 +178,6 @@ export const sendUserOnline = (userId) => {
     body: JSON.stringify(userId),
   });
 };
-
 export const sendUserOffline = (userId) => {
   if (!stompClient || !stompClient.connected) return;
 
@@ -209,31 +186,9 @@ export const sendUserOffline = (userId) => {
     body: JSON.stringify(userId),
   });
 };
-
-// Sử dụng sendBeacon để gửi offline khi đóng tab (đảm bảo gửi được)
-export const sendUserOfflineBeacon = (userId) => {
-  const token = sessionStorage.getItem("token");
-  const base = (process.env.REACT_APP_WS_BASE_URL || API_BASE_URL).replace(
-    /\/$/,
-    "",
-  );
-  const url = `${base}/api/presence/offline`;
-
-  const data = JSON.stringify({ userId });
-  const blob = new Blob([data], { type: "application/json" });
-
-  // sendBeacon đảm bảo request được gửi ngay cả khi tab đang đóng
-  if (navigator.sendBeacon) {
-    navigator.sendBeacon(url, blob);
-    console.log("🔴 Sent offline via sendBeacon for user:", userId);
-  }
-};
-
-/**
- * ==========================
- * SEND DATA
- * ==========================
- */
+// =======================
+// SEND DATA
+// =======================
 export const sendSocketData = (endpoint, body) => {
   if (!stompClient || !stompClient.connected) return;
 
@@ -244,7 +199,7 @@ export const sendSocketData = (endpoint, body) => {
 };
 
 // =======================
-// SEEN THEO CONVERSATION
+// SEEN BY CONVERSATION
 // =======================
 export const subscribeToConversationSeen = (conversationId, callback) => {
   if (!stompClient || !stompClient.connected) {
@@ -259,9 +214,7 @@ export const subscribeToConversationSeen = (conversationId, callback) => {
   const topic = `/topic/conversations/${conversationId}/seen`;
 
   seenSubscription = stompClient.subscribe(topic, (msg) => {
-    if (callback) {
-      callback(msg.body);
-    }
+    callback?.(msg.body);
   });
 
   console.log("👁️ Subscribed:", topic);

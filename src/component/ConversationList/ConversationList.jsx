@@ -5,12 +5,11 @@ import { useSocial } from "../../context/socialContext";
 import { useChat } from "../../context/chatContext";
 import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 export default function ConversationList() {
   const navigate = useNavigate();
- const { currentUser } = useContext(AuthContext);
-  const { isUserOnline } = useSocial();
+ const { currentUser,isUserOnline } = useContext(UserContext);
   const { openChat, activeChat, messages, newMessageTrigger } = useChat();
   const [conversations, setConversations] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true); // Chỉ loading lần đầu
@@ -201,7 +200,7 @@ export default function ConversationList() {
                 title="Xem thông tin"
               />
               {/* Online: chấm xanh | Offline: badge thời gian */}
-              {(isUserOnline(conv.friendId) || conv.online) ? (
+              {(isUserOnline(conv.friendId) ) ? (
                 <span className="online-indicator"></span>
               ) : (
                 conv.lastOnline && formatLastOnline(conv.lastOnline) && (

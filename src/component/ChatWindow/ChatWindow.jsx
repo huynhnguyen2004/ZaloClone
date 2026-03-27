@@ -9,13 +9,13 @@ import { useSocial } from "../../context/socialContext";
 import { sendMessage,readMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 export default function ChatWindow({ onCloseChat }) {
   const navigate = useNavigate();
   const { activeChat, messages, setMessages } = useChat();
-  const { currentUser } = useContext(AuthContext);
-  const { isUserOnline } = useSocial();
+  const { currentUser,isUserOnline } = useContext(UserContext);
+  
   const [text, setText] = useState("");
   const endRef = useRef();
   const pendingMessageIds = useRef(new Set()); // 🔥 Track pending messages

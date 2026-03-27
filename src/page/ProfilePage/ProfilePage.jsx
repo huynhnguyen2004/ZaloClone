@@ -20,11 +20,11 @@ import { MdVerified } from "react-icons/md";
 import { getAvatarUrl, getCoverUrl } from "../../utils/avatarHelper";
 import { uploadAvatar, uploadCover, editInfor, getCurrentUser } from "../../api/service/userService";
 import "./ProfilePage.css";
-import { AuthContext } from "../../context/authContext";
+import { UserContext } from "../../context/userContext";
 
 function ProfilePage() {
     const navigate = useNavigate();
-    const { currentUser } = useContext(AuthContext);
+    const { currentUser,isUserOnline } = useContext(UserContext);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [uploadingCover, setUploadingCover] = useState(false);
     const [showAvatarPreview, setShowAvatarPreview] = useState(false);
@@ -276,8 +276,8 @@ function ProfilePage() {
                         )}
                     </h2>
                     <div className="zalo-online-status">
-                        <span className={`status-dot ${currentUser?.online ? "online" : "offline"}`}></span>
-                        {currentUser?.online ? "Đang hoạt động" : "Ngoại tuyến"}
+                        <span className={`status-dot ${ isUserOnline(currentUser.id) ? "online" : "offline"}`}></span>
+                        {isUserOnline(currentUser.id) ? "Đang hoạt động" : "Ngoại tuyến"}
                     </div>
                 </div>
             </div>

@@ -1,18 +1,17 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { connectWebSocket, sendUserOfflineBeacon, sendUserOnline } from "../api/websocket";
+import { connectWebSocket, sendUserOnline } from "../api/websocket";
 import { getAllFriend, getAllFriendSend } from "../api/service/friend";
 import { normalizeFriendRequest } from "./userPresence";
-import { AuthContext } from "./authContext";
+import { UserContext } from "./userContext";
 
 const SocialContext = createContext();
 
 export const useSocial = () => useContext(SocialContext);
 
 export const SocialProvider = ({ children }) => {
-  const { currentUser } = useContext(AuthContext);
+  const { currentUser } = useContext(UserContext);
   const [friendRequests, setFriendRequests] = useState([]);
   const [friends, setFriends] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState(new Set());
   const wsInitializedRef = useRef(false);
 
   const fetchFriends = useCallback(async (userId) => {
@@ -42,7 +41,6 @@ export const SocialProvider = ({ children }) => {
       wsInitializedRef.current = false;
       setFriends([]);
       setFriendRequests([]);
-      setOnlineUsers(new Set());
       return;
     }
 
@@ -64,28 +62,10 @@ export const SocialProvider = ({ children }) => {
         fetchFriends(currentUser.id);
         fetchFriendRequests(currentUser.id);
       },
-      onPresenceChange: (presenceData) => {
-        const { userId, online } = presenceData;
-        setOnlineUsers((prev) => {
-          const next = new Set(prev);
-          if (online) {
-            next.add(userId);
-          } else {
-            next.delete(userId);
-          }
-          return next;
-        });
-      },
-      onConnected: (userId) => {
-        setOnlineUsers((prev) => new Set(prev).add(userId));
-      },
+      
     });
 
-    const handleBeforeUnload = () => {
-      if (currentUser?.id) {
-        sendUserOfflineBeacon(currentUser.id);
-      }
-    };
+  
 
     const handleVisibilityChange = () => {
       if (!currentUser?.id) return;
@@ -95,21 +75,16 @@ export const SocialProvider = ({ children }) => {
       }
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+   
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+     
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [currentUser?.id, fetchFriends, fetchFriendRequests]);
 
-  const isUserOnline = useCallback(
-    (userId) => {
-      return onlineUsers.has(userId);
-    },
-    [onlineUsers]
-  );
+ 
 
   const removeFriendRequest = useCallback((id) => {
     setFriendRequests((prev) => prev.filter((request) => request.id !== id));
@@ -121,10 +96,8 @@ export const SocialProvider = ({ children }) => {
         friends,
         setFriends,
         friendRequests,
-        onlineUsers,
         fetchFriends,
         fetchFriendRequests,
-        isUserOnline,
         removeFriendRequest,
       }}
     >
