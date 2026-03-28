@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../asset/logo.png";
 import "./AuthPage.css";
@@ -6,7 +6,7 @@ import useAuth from "../../hooks/useAuth";
 import { useOtp } from "../../hooks/useOtp";
 import { register, resetPassword } from "../../api/service/authService";
 import { handleApiError } from "../../utils/handleApiError";
-import { initialFormState } from "./constants";
+import { initialFormState, SITE_KEY } from "./constants";
 import RegisterForm from "../../component/AuthForm/RegisterForm";
 import ForgotPasswordForm from "../../component/AuthForm/RegisterForm";
 import LoginForm from "../../component/AuthForm/LoginForm";
@@ -21,12 +21,13 @@ function AuthPage() {
   const [forgotStep, setForgotStep] = useState(1);
   const [registerVerifyToken, setRegisterVerifyToken] = useState("");
   const [forgotVerifyToken, setForgotVerifyToken] = useState("");
+  const captchaRef = useRef(null);
   const {currentUser}=useContext(UserContext);
 
   const navigate = useNavigate();
   const { countdown, send, verify, setCountdown } = useOtp();
 
-  const { handleLogin, loading, status, setStatus } = useAuth({
+  const { handleLogin, loading, status, setStatus,showCaptcha } = useAuth({
     navigate
 
   });
@@ -94,7 +95,24 @@ function AuthPage() {
 
   const handleLoginSubmit = async () => {
     setFieldError({});
+
+    if (showCaptcha && !formData.captchaToken) {
+      setStatus({ type: "error", message: "Vui lòng xác minh captcha" });
+      return;
+    }
+
     await handleLogin(formData, setFieldError);
+  };
+
+  const onCaptchaChange = (token) => {
+    setFormData((prev) => ({
+      ...prev,
+      captchaToken: token || "",
+    }));
+
+    if (status?.message) {
+      setStatus({});
+    }
   };
 
   const handleSendRegisterOtp = async () => {
@@ -204,6 +222,8 @@ function AuthPage() {
       handleApiError(error, setStatus, setFieldError);
     }
   };
+  
+  
   return (
     <div className="auth">
       <div className="auth__card">
@@ -240,8 +260,11 @@ function AuthPage() {
               formData={formData}
               fieldError={fieldError}
               loading={loading}
-              showCaptcha={false}
+              showCaptcha={showCaptcha}
+              captchaRef={captchaRef}
+              siteKey={SITE_KEY}
               onChange={handleChange}
+              onCaptchaChange={onCaptchaChange}
               onForgotPassword={() => {
                 clearErrors();
                 setMode("forgot");

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
 import { useSocial } from "../../context/socialContext";
@@ -12,10 +12,13 @@ export default function ConversationList() {
  const { currentUser,isUserOnline } = useContext(UserContext);
   const { openChat, activeChat, messages, newMessageTrigger } = useChat();
   const [conversations, setConversations] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true); // Chỉ loading lần đầu
+  const [initialLoading, setInitialLoading] = useState(true); 
+  const didRun=useRef();
 
   // 🔥 Load danh sách hội thoại - refresh khi có tin nhắn mới
   useEffect(() => {
+     if (didRun.current) return;
+    didRun.current=true;
     const fetchConversations = async () => {
       if (!currentUser?.id) return;
 

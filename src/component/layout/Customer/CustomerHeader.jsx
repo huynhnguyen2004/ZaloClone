@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BiSearch, BiPlus, BiUserPlus, BiUserMinus } from "react-icons/bi";
 import { RiMessage3Line } from "react-icons/ri";
 import { sendFriendRequest, unFriend } from "../../../api/service/friend";
-import { sendSocketData } from "../../../api/websocket";
+
 import { search as searchUsers } from "../../../api/service/userService";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import UserDropdown from "../../UserDropdown/UserDropdown";
@@ -22,8 +22,6 @@ function CustomerHeader({ onProfileClick }) {
   const { currentUser } = useContext(UserContext);
 useEffect(() => {
   const q = query.trim();
-
-  // ✅ chặn mount + input rác
   if (!q || q.length < 10) {
     setResults([]);
     setOpen(false);
@@ -40,7 +38,7 @@ useEffect(() => {
 
       if (!isActive) return;
 
-      // ✅ FIX QUAN TRỌNG: đảm bảo luôn là array
+     
       if (Array.isArray(data)) {
         setResults(data);
       } else if (data) {
@@ -86,17 +84,8 @@ useEffect(() => {
     setSendingIds((prev) => [...prev, receiverId]);
 
     try {
-      const res = await sendFriendRequest(currentUser.id, receiverId);
-      const payload = res?.data || {
-        senderId: currentUser.id,
-        receiverId,
-      };
-
-      try {
-        sendSocketData("/app/friend/send", payload);
-      } catch (e) {
-        console.warn("WS publish failed", e);
-      }
+       await sendFriendRequest(currentUser.id, receiverId);
+     
 
       // 🔥 Đóng dropdown sau khi gửi
       setResults((prev) =>
