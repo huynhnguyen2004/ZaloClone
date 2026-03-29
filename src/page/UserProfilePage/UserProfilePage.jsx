@@ -88,7 +88,7 @@ function UserProfilePage() {
     const handleAddFriend = async () => {
         try {
             setActionLoading(true);
-            await sendFriendRequest(currentUser.id, userId);
+            await sendFriendRequest({userId:userId});
             setProfile(prev => ({ ...prev, relationshipStatus: RelationshipStatus.SENT_REQUEST }));
             setMessage({ type: "success", text: "Đã gửi lời mời kết bạn" });
         } catch (err) {
@@ -103,7 +103,7 @@ function UserProfilePage() {
     const handleCancelRequest = async () => {
         try {
             setActionLoading(true);
-            await unRequestFriend(currentUser.id, userId);
+            await unRequestFriend({userId:userId});
             setProfile(prev => ({ ...prev, relationshipStatus: RelationshipStatus.NONE }));
             setMessage({ type: "success", text: "Đã hủy lời mời kết bạn" });
         } catch (err) {
@@ -118,7 +118,7 @@ function UserProfilePage() {
     const handleAcceptRequest = async () => {
         try {
             setActionLoading(true);
-            await acceptFriend(currentUser.id, userId);
+            await acceptFriend({userId:userId});
             setProfile(prev => ({ ...prev, relationshipStatus: RelationshipStatus.FRIEND }));
             setMessage({ type: "success", text: "Đã trở thành bạn bè" });
             if (removeFriendRequest) {
@@ -136,7 +136,7 @@ function UserProfilePage() {
     const handleRejectRequest = async () => {
         try {
             setActionLoading(true);
-            await rejectFriendRequest(currentUser.id, userId);
+            await rejectFriendRequest({userId:userId});
             setProfile(prev => ({ ...prev, relationshipStatus: RelationshipStatus.NONE }));
             setMessage({ type: "success", text: "Đã từ chối lời mời kết bạn" });
             if (removeFriendRequest) {

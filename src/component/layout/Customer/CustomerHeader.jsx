@@ -84,7 +84,7 @@ useEffect(() => {
     setSendingIds((prev) => [...prev, receiverId]);
 
     try {
-       await sendFriendRequest(currentUser.id, receiverId);
+       await sendFriendRequest({userId:receiverId});
      
 
       // 🔥 Đóng dropdown sau khi gửi

@@ -49,7 +49,7 @@ function ChatArea({ activeTab }) {
     try {
       // API cần meId (người nhận) và otherId (người gửi - senderId)
       const senderId = req.senderId || req.id;
-      const res = await acceptFriend(currentUser.id, senderId);
+      const res = await acceptFriend({userId:senderId});
 
       const payload = res || {
         id: req.id,
@@ -74,7 +74,7 @@ function ChatArea({ activeTab }) {
     try {
       // API cần meId (người nhận) và userId (người gửi - senderId)
       const senderId = req.senderId || req.id;
-      await rejectFriendRequest(currentUser.id, senderId);
+      await rejectFriendRequest({userId:senderId});
       removeFriendRequest(req.id);
     } catch (err) {
       console.error("Decline error:", err);
