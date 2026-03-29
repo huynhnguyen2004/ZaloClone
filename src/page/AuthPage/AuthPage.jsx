@@ -33,7 +33,7 @@ function AuthPage() {
   });
   useEffect(()=>{
     if(currentUser){
-      navigate(currentUser?.role === "Customer" ? "/home" : "/admin")
+      navigate(currentUser?.role === "CUSTOMER" ? "/home" : "/admin")
     }
 
   },[currentUser,navigate])

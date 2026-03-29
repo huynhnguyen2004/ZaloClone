@@ -5,7 +5,7 @@ import "./ChatWindow.css";
 import { BiArrowBack } from "react-icons/bi";
 import { FiPhone, FiVideo } from "react-icons/fi";
 import { useContext, useEffect, useRef, useState } from "react";
-import { useSocial } from "../../context/socialContext";
+import { useSocial } from "../../context/friendContext";
 import { sendMessage,readMessage } from "../../api/service/chat";
 import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";

@@ -1,18 +1,25 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { connectWebSocket, sendUserOnline } from "../api/websocket";
-import { getAllFriend, getAllFriendSend } from "../api/service/friend";
-import { normalizeFriendRequest } from "./userPresence";
+import { getAllFriend, getAllFriendRequest } from "../api/service/friend";
 import { UserContext } from "./userContext";
 
-const SocialContext = createContext();
+const FriendContext = createContext();
 
-export const useSocial = () => useContext(SocialContext);
+export const useFriend = () => useContext(FriendContext);
 
-export const SocialProvider = ({ children }) => {
+export const FriendProvider = ({ children }) => {
   const { currentUser } = useContext(UserContext);
   const [friendRequests, setFriendRequests] = useState([]);
   const [friends, setFriends] = useState([]);
   const wsInitializedRef = useRef(false);
+  const [lastId, setLastId] = useState(null);
 
   const fetchFriends = useCallback(async (userId) => {
     if (!userId) return;
@@ -25,16 +32,38 @@ export const SocialProvider = ({ children }) => {
     }
   }, []);
 
-  const fetchFriendRequests = useCallback(async (userId) => {
-    if (!userId) return;
+  const fetchFriendRequests = useCallback(
+    async (isLoadMore = false) => {
+      try {
+        const res = await getAllFriendRequest({
+          size: 5,
+          ...(lastId && { lastId }),
+        });
+        const data = res?.data?.result?.content || [];
+        if (!isLoadMore) {
+          setLastId(null);
+        }
+        if (isLoadMore) {
+          setFriendRequests((pre) => [...pre, ...data]);
+        } else {
+          setFriendRequests(data);
+        }
+        if (data.length > 0) {
+          setLastId(data[data.length - 1].id);
+        }
+      } catch (err) {
+        console.error("Lỗi fetch request:", err);
+      }
+    },
+    [lastId],
+  );
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
 
-    try {
-      const res = await getAllFriendSend({ id: userId });
-      setFriendRequests(res.data.result ?? []);
-    } catch (err) {
-      console.error("Lỗi fetch request:", err);
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      fetchFriendRequests(true);
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (!currentUser?.id) {
@@ -48,24 +77,26 @@ export const SocialProvider = ({ children }) => {
 
     wsInitializedRef.current = true;
     fetchFriends(currentUser.id);
-    fetchFriendRequests(currentUser.id);
+    fetchFriendRequests();
 
     connectWebSocket({
       userId: currentUser.id,
       onReceiveRequest: (data) => {
-        const request = normalizeFriendRequest(data);
-        setFriendRequests((prev) =>
-          prev.some((item) => item.id === request.id) ? prev : [request, ...prev]
-        );
+        const res={
+          id:data?.id,
+          senderId:data?.senderId,
+          senderName:data?.senderName,
+          phone:data?.phone
+
+        };
+        setFriendRequests((prev) => [res,...prev]);
+        
       },
       onReceiveAccept: () => {
         fetchFriends(currentUser.id);
-        fetchFriendRequests(currentUser.id);
+        fetchFriendRequests();
       },
-      
     });
-
-  
 
     const handleVisibilityChange = () => {
       if (!currentUser?.id) return;
@@ -75,33 +106,30 @@ export const SocialProvider = ({ children }) => {
       }
     };
 
-   
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-     
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [currentUser?.id, fetchFriends, fetchFriendRequests]);
-
- 
 
   const removeFriendRequest = useCallback((id) => {
     setFriendRequests((prev) => prev.filter((request) => request.id !== id));
   }, []);
 
   return (
-    <SocialContext.Provider
+    <FriendContext.Provider
       value={{
         friends,
         setFriends,
         friendRequests,
+        handleScroll,
         fetchFriends,
         fetchFriendRequests,
         removeFriendRequest,
       }}
     >
       {children}
-    </SocialContext.Provider>
+    </FriendContext.Provider>
   );
 };

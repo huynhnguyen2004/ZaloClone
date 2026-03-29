@@ -13,8 +13,11 @@ export const acceptFriend = async (meId, otherId) => {
   return res.data.result;
 };
 
-export const getAllFriendSend=async(params)=>{
-  return api.get("/api/friendrequest",{params})
+export const getAllFriendRequest=async(params)=>{
+  return api.get("/api/friendrequest",{params}
+    
+
+  )
 }
 export const getAllFriend=async(params)=>{
   return api.get("/api/friends",{params})

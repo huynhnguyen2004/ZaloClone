@@ -1,25 +1,19 @@
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import { 
     BiMessageRounded, 
-    BiCog,
-    BiGroup,
-    BiBookmark,
     BiUserPlus,
-    BiCheck,
-    BiX
 } from "react-icons/bi";
 import { HiOutlineUsers } from "react-icons/hi";
-import { MdOutlineArticle } from "react-icons/md";
-import { useSocial } from "../../../context/socialContext";
 import { useChat } from "../../../context/chatContext";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
 import { UserContext } from "../../../context/userContext";
+import { useFriend } from "../../../context/friendContext";
 
 function CustomerSideBar({ onTabChange }) {
-    const [activeTab, setActiveTab] = useState("chats");
+    const { activeTab, setActiveTab } = useChat();
     const { currentUser } = useContext(UserContext);
-    const { friendRequests } = useSocial();
+    const { friendRequests } = useFriend();
     const { unreadCount, clearUnread } = useChat();
 
     const handleTabClick = (tabName) => {
@@ -44,17 +38,19 @@ function CustomerSideBar({ onTabChange }) {
             id: "contacts",
             icon: HiOutlineUsers,
             title: "Danh bạ"
+        },
+        {
+            id: "friendRequests",
+            icon: BiUserPlus,
+            title: "Lời mời kết bạn",
+            notification: friendRequests?.length > 0
+                ? (friendRequests.length > 99 ? "99+" : friendRequests.length)
+                : null,
         }
         
     ];
 
-    const toggleRequestPanel = () => {
-        const targetTab = "friendRequests";
-        setActiveTab(targetTab);
-        if (onTabChange) {
-            onTabChange(targetTab);
-        }
-    };
+   
 
     return (
         <div className="sidebar-container">
@@ -81,27 +77,11 @@ function CustomerSideBar({ onTabChange }) {
                                 {item.notification && (
                                     <span className="notification-badge">{item.notification}</span>
                                 )}
+                                
                             </div>
                         </button>
                     );
                 })}
-
-                <button
-                    className={`nav-item request-trigger ${
-                        activeTab === "friendRequests" ? "active" : ""
-                    }`}
-                    onClick={toggleRequestPanel}
-                    title="Lời mời kết bạn"
-                >
-                    <div className="nav-icon-wrapper">
-                        <BiUserPlus className="nav-icon" />
-                        {friendRequests?.length > 0 && (
-                            <span className="notification-badge">
-                                {friendRequests.length > 99 ? "99+" : friendRequests.length}
-                            </span>
-                        )}
-                    </div>
-                </button>
             </div>
 
           

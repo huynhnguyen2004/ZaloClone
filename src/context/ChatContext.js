@@ -22,7 +22,7 @@ export function ChatProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0); // Số tin nhắn chưa đọc
   const [seenByFriend, setSeenByFriend] = useState(false);
   const [newMessageTrigger, setNewMessageTrigger] = useState(0); // Trigger để refresh conversation list
-
+const [activeTab,setActiveTab]=useState("chats");
   const { currentUser } = useContext(UserContext);
 
   // ==========================
@@ -199,6 +199,8 @@ export function ChatProvider({ children }) {
         openChat,
         setMessages,
         setActiveChat,
+        activeTab,
+        setActiveTab,
         seenByFriend,
         unreadCount,
         clearUnread,

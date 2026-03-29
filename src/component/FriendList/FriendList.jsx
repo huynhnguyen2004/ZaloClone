@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BiUserMinus } from "react-icons/bi";
 import "./FriendList.css";
 
-import { useSocial } from "../../context/socialContext";
+import { useFriend, useSocial } from "../../context/friendContext";
 import { useChat } from "../../context/chatContext";
 import { unFriend } from "../../api/service/friend";
 import { getAvatarUrl } from "../../utils/avatarHelper";
@@ -12,7 +12,7 @@ import { UserContext } from "../../context/userContext";
 export default function FriendList() {
   const navigate = useNavigate();
   const { currentUser, isUserOnline} = useContext(UserContext);
-  const { friends, setFriends } = useSocial();
+  const { friends, setFriends } = useFriend();
   const { openChat } = useChat();
   const [removingIds, setRemovingIds] = useState([]);
 

@@ -439,7 +439,6 @@
     display: flex;
     gap: 6px;
     overflow-x: auto;
-    scrollbar-width: none;
     -ms-overflow-style: none;
 }
 
@@ -480,8 +479,6 @@
 .sidebar-content {
     flex: 1;
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #e1e5e9 transparent;
 }
 
 .sidebar-content::-webkit-scrollbar {

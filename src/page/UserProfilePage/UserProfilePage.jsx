@@ -14,7 +14,7 @@ import {
     BiX
 } from "react-icons/bi";
 import { FaUserClock, FaUserTimes } from "react-icons/fa";
-import { useSocial } from "../../context/socialContext";
+import { useFriend, useSocial } from "../../context/friendContext";
 import { useChat } from "../../context/chatContext";
 import { seenProfile } from "../../api/service/userService";
 import { 
@@ -40,7 +40,7 @@ function UserProfilePage() {
     const navigate = useNavigate();
     const { userId } = useParams();
      const { currentUser } = useContext(UserContext);
-    const { removeFriendRequest } = useSocial();
+    const { removeFriendRequest } = useFriend();
     const { openChat } = useChat();
     
     const [profile, setProfile] = useState(null);

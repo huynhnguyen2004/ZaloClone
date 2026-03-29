@@ -40,13 +40,12 @@ export const connectWebSocket = ({
     return;
   }
 
-  // ===== SAVE CALLBACK =====
-  callbacks.onReceiveRequest = onReceiveRequest;
-  callbacks.onReceiveAccept = onReceiveAccept;
-  callbacks.onReceiveMessage = onReceiveMessage;
-  callbacks.onSeenMessage = onSeenMessage;
-  callbacks.onPresenceChange = onPresenceChange;
-  callbacks.onConnected = onConnected;
+if (onReceiveRequest !== undefined) callbacks.onReceiveRequest = onReceiveRequest;
+if (onReceiveAccept !== undefined) callbacks.onReceiveAccept = onReceiveAccept;
+if (onReceiveMessage !== undefined) callbacks.onReceiveMessage = onReceiveMessage;
+if (onSeenMessage !== undefined) callbacks.onSeenMessage = onSeenMessage;
+if (onPresenceChange !== undefined) callbacks.onPresenceChange = onPresenceChange;
+if (onConnected !== undefined) callbacks.onConnected = onConnected;
 
   // ===== AVOID RECONNECT =====
   if (

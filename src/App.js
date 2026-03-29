@@ -5,7 +5,6 @@ import AdminLayout from "./layout/AdminLayout/AdminLayout";
 import ProfilePage from "./page/ProfilePage/ProfilePage";
 import UserProfilePage from "./page/UserProfilePage/UserProfilePage";
 
-import { SocialProvider } from "./context/socialContext";
 import "./App.css";
 import { ChatProvider } from "./context/chatContext";
 // Admin Pages
@@ -13,13 +12,14 @@ import AdminDashboard from "./page/Admin/AdminDashboard/AdminDashboard";
 import AdminUsers from "./page/Admin/AdminUsers/AdminUsers";
 import AdminSettings from "./page/Admin/AdminSettings/AdminSettings";
 import { UserProvider } from "./context/userContext";
+import { FriendProvider } from "./context/friendContext";
 
 
 function App() {
   return (
     <UserProvider>
       <ChatProvider>
-        <SocialProvider>
+        <FriendProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<AuthPage />} />
@@ -37,7 +37,7 @@ function App() {
               </Route>
             </Routes>
           </BrowserRouter>
-        </SocialProvider>
+        </FriendProvider>
       </ChatProvider>
     </UserProvider>
   );

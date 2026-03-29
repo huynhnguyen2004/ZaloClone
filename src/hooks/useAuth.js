@@ -23,8 +23,7 @@ export default function useAuth({ navigate }) {
       const token = data?.result?.accessToken;
       setAccessToken(token);
       const user = await fetchCurrentUser();
-
-      navigate(user?.role === "Customer" ? "/home" : "/admin");
+      navigate(user?.role === "CUSTOMER" ? "/home" : "/admin");
     } catch (err) {
       const code = err?.response?.data?.code;
       if (code === "CAPTCHA_REQUIRED") {

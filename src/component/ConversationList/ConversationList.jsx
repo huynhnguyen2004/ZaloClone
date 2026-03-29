@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
-import { useSocial } from "../../context/socialContext";
 import { useChat } from "../../context/chatContext";
 import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
