@@ -13,6 +13,7 @@ import AdminUsers from "./page/Admin/AdminUsers/AdminUsers";
 import AdminSettings from "./page/Admin/AdminSettings/AdminSettings";
 import { UserProvider } from "./context/userContext";
 import { FriendProvider } from "./context/friendContext";
+import { NotificationProvider } from "./context/notificationContext";
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
     <UserProvider>
       <ChatProvider>
         <FriendProvider>
+           <NotificationProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<AuthPage />} />
@@ -37,6 +39,7 @@ function App() {
               </Route>
             </Routes>
           </BrowserRouter>
+           </NotificationProvider>
         </FriendProvider>
       </ChatProvider>
     </UserProvider>

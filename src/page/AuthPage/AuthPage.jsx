@@ -7,10 +7,10 @@ import { useOtp } from "../../hooks/useOtp";
 import { register, resetPassword } from "../../api/service/authService";
 import { handleApiError } from "../../utils/handleApiError";
 import { initialFormState, SITE_KEY } from "./constants";
-import RegisterForm from "../../component/AuthForm/RegisterForm";
-import ForgotPasswordForm from "../../component/AuthForm/RegisterForm";
 import LoginForm from "../../component/AuthForm/LoginForm";
 import { UserContext } from "../../context/userContext";
+import RegisterForm from "../../component/AuthForm/RegisterForm";
+import ForgotPasswordForm from "../../component/AuthForm/ForgotPasswordForm";
 
 
 function AuthPage() {

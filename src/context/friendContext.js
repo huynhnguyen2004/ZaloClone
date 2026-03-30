@@ -31,7 +31,6 @@ export const FriendProvider = ({ children }) => {
       console.error("Lỗi fetch bạn bè:", err);
     }
   }, []);
-
   const fetchFriendRequests = useCallback(
     async (isLoadMore = false) => {
       try {
@@ -79,24 +78,7 @@ export const FriendProvider = ({ children }) => {
     fetchFriends(currentUser.id);
     fetchFriendRequests();
 
-    connectWebSocket({
-      userId: currentUser.id,
-      onReceiveRequest: (data) => {
-        const res={
-          id:data?.id,
-          senderId:data?.senderId,
-          senderName:data?.senderName,
-          phone:data?.phone
-
-        };
-        setFriendRequests((prev) => [res,...prev]);
-        
-      },
-      onReceiveAccept: () => {
-        fetchFriends(currentUser.id);
-        fetchFriendRequests();
-      },
-    });
+   
 
     const handleVisibilityChange = () => {
       if (!currentUser?.id) return;
@@ -123,6 +105,7 @@ export const FriendProvider = ({ children }) => {
         friends,
         setFriends,
         friendRequests,
+        setFriendRequests,
         handleScroll,
         fetchFriends,
         fetchFriendRequests,

@@ -16,6 +16,7 @@ const callbacks = {
   onSeenMessage: null,
   onPresenceChange: null,
   onConnected: null,
+  onReceiveNotification:null
 };
 
 let seenSubscription = null;
@@ -34,6 +35,7 @@ export const connectWebSocket = ({
   onSeenMessage,
   onPresenceChange,
   onConnected,
+  onReceiveNotification
 }) => {
   if (!userId) {
     console.warn("❌ Missing userId");
@@ -46,7 +48,7 @@ if (onReceiveMessage !== undefined) callbacks.onReceiveMessage = onReceiveMessag
 if (onSeenMessage !== undefined) callbacks.onSeenMessage = onSeenMessage;
 if (onPresenceChange !== undefined) callbacks.onPresenceChange = onPresenceChange;
 if (onConnected !== undefined) callbacks.onConnected = onConnected;
-
+if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveNotification
   // ===== AVOID RECONNECT =====
   if (
     stompClient &&
@@ -110,6 +112,9 @@ if (onConnected !== undefined) callbacks.onConnected = onConnected;
     stompClient.subscribe(`/topic/presence`, (msg) => {
       callbacks.onPresenceChange?.(JSON.parse(msg.body));
     });
+    stompClient.subscribe(`/topic/notification/${userId}`,(msg)=>{
+      callbacks.onReceiveNotification?.(JSON.parse(msg.body));
+    })
 
     // ✅ CHỈ GỬI ONLINE Ở ĐÂY
     sendUserOnline(userId);
