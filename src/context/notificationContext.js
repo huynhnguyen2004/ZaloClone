@@ -1,7 +1,15 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { UserContext } from "./userContext";
 import { connectWebSocket, disconnectWebSocket } from "../api/websocket";
 import { useFriend } from "./friendContext";
+import { getAllNotification } from "../api/service/notification";
 export const NotificationContext = createContext();
 export const useNoti = () => useContext(NotificationContext);
 export const NotificationProvider = ({ children }) => {
@@ -9,19 +17,42 @@ export const NotificationProvider = ({ children }) => {
   const { setFriendRequests } = useFriend();
   const [notifications, setNotifications] = useState([]);
   const wsInitialized = useRef(false);
-  const getNotificationMessage = (noti) => {
-    switch (noti.type) {
-      case "SEND_REQUEST":
-        return `${noti.sender.name} đã gửi lời mời kết bạn`;
+  const [lastId, setLastId] = useState(null);
+  
 
-      case "ACCEPT_REQUEST":
-        return `${noti.sender.name} đã chấp nhận lời mời`;
+  const fetchNotification = useCallback(
+    async (isLoadMore = false) => {
+      try {
+        const res = await getAllNotification({
+          size: 10,
+          ...(lastId && { lastId }),
+        });
+        const data = res?.data?.result?.content || [];
+      
+        
+        if (!isLoadMore) {
+          setLastId(null);
+        }
+        if (isLoadMore) {
+          setNotifications((pre) => [...data, ...pre]);
+        } else {
+          setNotifications(data);
+        }
+        if (data.length > 0) {
+          setLastId(data[data.length - 1].id);
+        }
+      } catch (error) {
+        console.log(error);
+        
+      }
+    },
+    [lastId],
+  );
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
 
-      case "NEW_MESSAGE":
-        return `${noti.sender.name} đã gửi tin nhắn`;
-
-      default:
-        return "Bạn có thông báo mới";
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      fetchNotification(true);
     }
   };
 
@@ -30,7 +61,7 @@ export const NotificationProvider = ({ children }) => {
 
     if (wsInitialized.current) return;
     wsInitialized.current = true;
-
+    fetchNotification();
     connectWebSocket({
       userId: currentUser.id,
       onReceiveNotification: (data) => {
@@ -40,7 +71,8 @@ export const NotificationProvider = ({ children }) => {
             senderId: data?.senderId,
             senderFirstName: data?.senderFirstName,
             senderLastName: data?.senderLastName,
-            targetId:data?.targetId,
+            targetId: data?.targetId,
+            isRead:data?.isRead,
             type: data?.type,
           };
           const res = {
@@ -67,7 +99,7 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [currentUser]);
   return (
-    <NotificationContext.Provider value={{ notifications }}>
+    <NotificationContext.Provider value={{ notifications,setNotifications,handleScroll }}>
       {children}
     </NotificationContext.Provider>
   );

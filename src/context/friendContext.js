@@ -43,7 +43,7 @@ export const FriendProvider = ({ children }) => {
           setLastId(null);
         }
         if (isLoadMore) {
-          setFriendRequests((pre) => [...pre, ...data]);
+          setFriendRequests((pre) => [...data,...pre]);
         } else {
           setFriendRequests(data);
         }

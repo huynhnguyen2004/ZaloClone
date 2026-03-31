@@ -9,10 +9,13 @@ import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
 import { UserContext } from "../../../context/userContext";
 import { useFriend } from "../../../context/friendContext";
+import { NotificationContext } from "../../../context/notificationContext";
+import { IoNotificationsOutline } from "react-icons/io5";
 
 function CustomerSideBar({ onTabChange }) {
     const { activeTab, setActiveTab } = useChat();
     const { currentUser } = useContext(UserContext);
+    const {notification}=useContext(NotificationContext);
     const { friendRequests } = useFriend();
     const { unreadCount, clearUnread } = useChat();
 
@@ -21,7 +24,7 @@ function CustomerSideBar({ onTabChange }) {
         if (onTabChange) {
             onTabChange(tabName);
         }
-        // Xóa thông báo khi click vào tab tin nhắn
+    
         if (tabName === "chats") {
             clearUnread();
         }
@@ -45,6 +48,13 @@ function CustomerSideBar({ onTabChange }) {
             title: "Lời mời kết bạn",
             notification: friendRequests?.length > 0
                 ? (friendRequests.length > 99 ? "99+" : friendRequests.length)
+                : null,
+        },{
+             id: "notifications",
+            icon: IoNotificationsOutline,
+            title: "Thông báo",
+            notification: notification?.length > 0
+                ? (notification.length > 99 ? "99+" : notification.length)
                 : null,
         }
         

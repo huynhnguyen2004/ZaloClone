@@ -15,6 +15,7 @@ import ContactsTabContent from "../../component/Tabs/ContactsTabContent";
 import FriendRequestTabContent from "../../component/Tabs/FriendRequestTabContent";
 import DefaultTabContent from "../../component/Tabs/DefaultTabContent";
 import { useFriend, useSocial } from "../../context/friendContext";
+import NotificationsTab from "../../component/Tabs/NotificationsTab";
 
 
 function ChatArea({ activeTab }) {
@@ -81,9 +82,11 @@ function ChatArea({ activeTab }) {
     }
   };
 
-  // -------------------------------------------------------------------
-  // ---------------------- RENDER UI THEO TAB -------------------------
-  // -------------------------------------------------------------------
+  const handleProfile=(item)=>{
+    navigate(`/user/${item?.senderId}`)
+    
+    
+  }
   const renderContent = () => {
     switch (activeTab) {
       case "chats":
@@ -112,7 +115,12 @@ function ChatArea({ activeTab }) {
             onAvatarClick={(userId) => navigate(`/user/${userId}`)}
           />
         );
-
+      case "notifications":
+        return (
+          <NotificationsTab  handleProfile={handleProfile}/>
+           
+         
+        )
       default:
         return <DefaultTabContent />;
     }
