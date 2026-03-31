@@ -18,7 +18,6 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const wsInitialized = useRef(false);
   const [lastId, setLastId] = useState(null);
-  
 
   const fetchNotification = useCallback(
     async (isLoadMore = false) => {
@@ -28,8 +27,7 @@ export const NotificationProvider = ({ children }) => {
           ...(lastId && { lastId }),
         });
         const data = res?.data?.result?.content || [];
-      
-        
+
         if (!isLoadMore) {
           setLastId(null);
         }
@@ -43,7 +41,6 @@ export const NotificationProvider = ({ children }) => {
         }
       } catch (error) {
         console.log(error);
-        
       }
     },
     [lastId],
@@ -67,15 +64,15 @@ export const NotificationProvider = ({ children }) => {
       onReceiveNotification: (data) => {
         if (data.type === "SEND_REQUEST") {
           const resNoti = {
-            id: data?.targetId,
+            id: data?.id,
             senderId: data?.senderId,
             senderFirstName: data?.senderFirstName,
             senderLastName: data?.senderLastName,
             targetId: data?.targetId,
-            isRead:data?.isRead,
+            isRead: data?.isRead,
             type: data?.type,
           };
-          const res = {
+          const resRequest = {
             id: data?.targetId,
             senderId: data?.senderId,
             senderName: data?.senderFirstName,
@@ -86,9 +83,19 @@ export const NotificationProvider = ({ children }) => {
             const exists = prev.some((item) => item.id === data.targetId);
             if (exists) return prev;
 
-            return [res, ...prev];
+            return [resRequest, ...prev];
           });
-          setNotifications((prev) => [resNoti, ...prev]);
+          setNotifications((prev) => {
+            const filtered = prev.filter(
+              (item) =>
+                !(
+                  item.senderId === resNoti.senderId &&
+                  item.type === resNoti.type
+                ),
+            );
+
+            return [resNoti, ...filtered];
+          });
         }
       },
     });
@@ -99,7 +106,9 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [currentUser]);
   return (
-    <NotificationContext.Provider value={{ notifications,setNotifications,handleScroll }}>
+    <NotificationContext.Provider
+      value={{ notifications, setNotifications, handleScroll }}
+    >
       {children}
     </NotificationContext.Provider>
   );

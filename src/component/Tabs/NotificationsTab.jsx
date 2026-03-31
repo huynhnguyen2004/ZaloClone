@@ -96,7 +96,6 @@ const NotificationsTab = ({handleProfile}) => {
                         {displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    {isUnread && <span className="noti-unread-dot" />}
                   </div>
 
                   {/* Content */}
