@@ -7,7 +7,6 @@ import { FiPhone, FiVideo } from "react-icons/fi";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useSocial } from "../../context/friendContext";
 import { sendMessage,readMessage } from "../../api/service/chat";
-import { sendSocketData } from "../../api/websocket";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
 
@@ -99,8 +98,7 @@ export default function ChatWindow({ onCloseChat }) {
         return [...prev, saved];
       });
 
-      // 🔔 Gửi realtime để notify receiver
-      sendSocketData("/app/chat", msgBody);
+      
 
    
 

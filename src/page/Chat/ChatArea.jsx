@@ -5,8 +5,6 @@ import {
   rejectFriendRequest
 } from "../../api/service/friend";
 
-import { sendSocketData } from "../../api/websocket";
-
 import "./ChatArea.css";
 import { useChat } from "../../context/chatContext";
 import { UserContext } from "../../context/userContext";
@@ -58,11 +56,7 @@ function ChatArea({ activeTab }) {
         receiverId: currentUser.id,
       };
 
-      try {
-        sendSocketData("/app/friend/accept", payload);
-      } catch (e) {
-        console.warn("WebSocket error", e);
-      }
+     
 
       removeFriendRequest(req.id);
     } catch (err) {

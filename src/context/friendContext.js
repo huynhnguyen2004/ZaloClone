@@ -9,6 +9,7 @@ import React, {
 import { connectWebSocket, sendUserOnline } from "../api/websocket";
 import { getAllFriend, getAllFriendRequest } from "../api/service/friend";
 import { UserContext } from "./userContext";
+import { data } from "react-router-dom";
 
 const FriendContext = createContext();
 
@@ -77,7 +78,13 @@ export const FriendProvider = ({ children }) => {
     wsInitializedRef.current = true;
     fetchFriends(currentUser.id);
     fetchFriendRequests();
-
+    connectWebSocket({
+      userId:currentUser?.id,
+      onFriendList:(data)=>{
+        console.log(data);
+        
+      }
+    })
    
 
     const handleVisibilityChange = () => {

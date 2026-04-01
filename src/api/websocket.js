@@ -10,11 +10,9 @@ let stompClient = null;
 let connectedUserId = null;
 
 const callbacks = {
-  onReceiveRequest: null,
-  onReceiveAccept: null,
+  onFriendList:null,
   onReceiveMessage: null,
   onSeenMessage: null,
-  onPresenceChange: null,
   onConnected: null,
   onReceiveNotification:null
 };
@@ -29,11 +27,9 @@ const WS_BASE_URL = API_BASE_URL;
 // =======================
 export const connectWebSocket = ({
   userId,
-  onReceiveRequest,
-  onReceiveAccept,
+  onFriendList,
   onReceiveMessage,
   onSeenMessage,
-  onPresenceChange,
   onConnected,
   onReceiveNotification
 }) => {
@@ -41,12 +37,9 @@ export const connectWebSocket = ({
     console.warn("❌ Missing userId");
     return;
   }
-
-if (onReceiveRequest !== undefined) callbacks.onReceiveRequest = onReceiveRequest;
-if (onReceiveAccept !== undefined) callbacks.onReceiveAccept = onReceiveAccept;
+if(onFriendList!==undefined) callbacks.onFriendList=onFriendList
 if (onReceiveMessage !== undefined) callbacks.onReceiveMessage = onReceiveMessage;
 if (onSeenMessage !== undefined) callbacks.onSeenMessage = onSeenMessage;
-if (onPresenceChange !== undefined) callbacks.onPresenceChange = onPresenceChange;
 if (onConnected !== undefined) callbacks.onConnected = onConnected;
 if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveNotification
   // ===== AVOID RECONNECT =====
@@ -84,34 +77,21 @@ if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveN
   stompClient.onConnect = () => {
     console.log("🟢 CONNECTED:", userId);
 
-    // ===== FRIEND REQUEST =====
-    stompClient.subscribe(`/topic/friend-request/${userId}`, (msg) => {
-      callbacks.onReceiveRequest?.(JSON.parse(msg.body));
-    });
-
-    // ===== FRIEND ACCEPT =====
-    stompClient.subscribe(`/topic/friend-accept/${userId}`, (msg) => {
-      callbacks.onReceiveAccept?.(JSON.parse(msg.body));
-    });
+   stompClient.subscribe(`/topic/friend-list/${userId}`,(msg)=>{
+    callbacks.onFriendList?.(JSON.parse(msg.body));
+   })
 
     // ===== CHAT =====
     stompClient.subscribe(`/topic/chat/${userId}`, (msg) => {
       callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
-    stompClient.subscribe(`/topic/chat-self/${userId}`, (msg) => {
-      callbacks.onReceiveMessage?.(JSON.parse(msg.body));
-    });
-
+   
     // ===== SEEN =====
     stompClient.subscribe(`/user/${userId}/queue/seen`, (msg) => {
       callbacks.onSeenMessage?.(msg.body);
     });
 
-    // ===== PRESENCE =====
-    stompClient.subscribe(`/topic/presence`, (msg) => {
-      callbacks.onPresenceChange?.(JSON.parse(msg.body));
-    });
     stompClient.subscribe(`/topic/notification/${userId}`,(msg)=>{
       callbacks.onReceiveNotification?.(JSON.parse(msg.body));
     })
@@ -190,17 +170,7 @@ export const sendUserOffline = (userId) => {
     body: JSON.stringify(userId),
   });
 };
-// =======================
-// SEND DATA
-// =======================
-export const sendSocketData = (endpoint, body) => {
-  if (!stompClient || !stompClient.connected) return;
 
-  stompClient.publish({
-    destination: endpoint,
-    body: JSON.stringify(body),
-  });
-};
 
 // =======================
 // SEEN BY CONVERSATION

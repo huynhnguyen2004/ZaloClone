@@ -80,7 +80,7 @@ export const NotificationProvider = ({ children }) => {
           };
 
           setFriendRequests((prev) => {
-            const exists = prev.some((item) => item.id === data.targetId);
+            const exists = prev.some((item) => item.id === resRequest.id);
             if (exists) return prev;
 
             return [resRequest, ...prev];
@@ -95,6 +95,39 @@ export const NotificationProvider = ({ children }) => {
             );
 
             return [resNoti, ...filtered];
+          });
+        }
+        if (data.type === "ACCEPT_REQUEST") {
+          const resNoti = {
+            id: data?.id,
+            senderId: data?.senderId,
+            senderFirstName: data?.senderFirstName,
+            senderLastName: data?.senderLastName,
+            targetId: data?.targetId,
+            isRead: data?.isRead,
+            type: data?.type,
+          };
+          const resRequest = {
+            id: data?.targetId,
+            senderId: data?.receiverId,
+            senderName: data?.receiverFirstName,
+            phone: data?.receiverPhone,
+          };
+
+          setNotifications((prev) => {
+            if(resNoti?.senderId===currentUser?.id) return prev;
+
+            const filter = prev.filter(
+              (item) =>
+                !(
+                  item.senderId === resNoti.senderId &&
+                  item.type === resNoti.type
+                ),
+            );
+            return [resNoti, ...filter];
+          });
+          setFriendRequests((prev) => {
+            return prev.filter((item) => item.senderId !== resRequest.senderId);
           });
         }
       },

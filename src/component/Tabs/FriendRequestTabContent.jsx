@@ -21,7 +21,7 @@ function FriendRequestsTabContent({
 
       {friendRequests?.length > 0 ? (
         <div className="friend-requests-grid" onScroll={handleScroll}>
-          {friendRequests.map((req) => {
+          {friendRequests?.map((req) => {
             const displayName = req.senderName || req.phone || "Người dùng";
             const displayId = req.senderId || req.phone || req.id;
             const userId = req.senderId || req.id;
