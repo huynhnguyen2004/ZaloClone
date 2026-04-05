@@ -20,9 +20,9 @@ function ChatArea({ activeTab }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 🔥 Dữ liệu realtime lấy từ UserContext
+
   const { currentUser } = useContext(UserContext);
-  const { friendRequests, removeFriendRequest } = useFriend();
+  const { friendRequests,setFriendRequests } = useFriend();
   const {activeChat,setActiveChat}=useChat();
 
   useEffect(() => {
@@ -46,19 +46,11 @@ function ChatArea({ activeTab }) {
   /** Bấm Chấp nhận */
   const handleAccept = async (req) => {
     try {
-      // API cần meId (người nhận) và otherId (người gửi - senderId)
-      const senderId = req.senderId || req.id;
-      const res = await acceptFriend({userId:senderId});
+      
+      const senderId = req.senderId ;
+     await acceptFriend({userId:senderId});
 
-      const payload = res || {
-        id: req.id,
-        senderId: senderId,
-        receiverId: currentUser.id,
-      };
-
-     
-
-      removeFriendRequest(req.id);
+      
     } catch (err) {
       console.error("Accept error:", err);
     }
@@ -67,10 +59,13 @@ function ChatArea({ activeTab }) {
   /** Bấm Từ chối */
   const handleDecline = async (req) => {
     try {
-      // API cần meId (người nhận) và userId (người gửi - senderId)
-      const senderId = req.senderId || req.id;
+      const senderId = req.senderId;
       await rejectFriendRequest({userId:senderId});
-      removeFriendRequest(req.id);
+      setFriendRequests((prev)=>{
+        const filter=prev.filter((item)=>item.senderId!==senderId);
+        return filter;
+      })
+      
     } catch (err) {
       console.error("Decline error:", err);
     }

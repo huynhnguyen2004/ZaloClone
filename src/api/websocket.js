@@ -2,6 +2,7 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { API_BASE_URL } from "./api";
 import { getAccessToken } from "./tokenStorage";
+import { useRef } from "react";
 
 // =======================
 // GLOBAL STATE
@@ -14,7 +15,9 @@ const callbacks = {
   onReceiveMessage: null,
   onSeenMessage: null,
   onConnected: null,
-  onReceiveNotification:null
+  onReceiveNotification:null,
+  onUpdateRequestList:null,
+   onPresenceChange:null
 };
 
 let seenSubscription = null;
@@ -30,8 +33,9 @@ export const connectWebSocket = ({
   onFriendList,
   onReceiveMessage,
   onSeenMessage,
-  onConnected,
-  onReceiveNotification
+  onReceiveNotification,
+  onUpdateRequestList,
+   onPresenceChange
 }) => {
   if (!userId) {
     console.warn("❌ Missing userId");
@@ -40,9 +44,10 @@ export const connectWebSocket = ({
 if(onFriendList!==undefined) callbacks.onFriendList=onFriendList
 if (onReceiveMessage !== undefined) callbacks.onReceiveMessage = onReceiveMessage;
 if (onSeenMessage !== undefined) callbacks.onSeenMessage = onSeenMessage;
-if (onConnected !== undefined) callbacks.onConnected = onConnected;
-if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveNotification
-  // ===== AVOID RECONNECT =====
+if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveNotification;
+if(onUpdateRequestList!==undefined) callbacks.onUpdateRequestList=onUpdateRequestList;
+if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
+// ===== AVOID RECONNECT =====
   if (
     stompClient &&
     connectedUserId === userId &&
@@ -77,6 +82,9 @@ if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveN
   stompClient.onConnect = () => {
     console.log("🟢 CONNECTED:", userId);
 
+    stompClient.subscribe(`/topic/presence`,(msg)=>{
+      callbacks.onPresenceChange?.(JSON.parse(msg.body));
+    })
    stompClient.subscribe(`/topic/friend-list/${userId}`,(msg)=>{
     callbacks.onFriendList?.(JSON.parse(msg.body));
    })
@@ -95,11 +103,14 @@ if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveN
     stompClient.subscribe(`/topic/notification/${userId}`,(msg)=>{
       callbacks.onReceiveNotification?.(JSON.parse(msg.body));
     })
+    stompClient.subscribe(`/topic/friend-request/${userId}`,(msg)=>{
+      callbacks.onUpdateRequestList?.(JSON.parse(msg.body));
+      })
 
     // ✅ CHỈ GỬI ONLINE Ở ĐÂY
     sendUserOnline(userId);
 
-    callbacks.onConnected?.(userId);
+
 
     // ===== HANDLE PENDING SEEN =====
     if (pendingSeen) {

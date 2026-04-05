@@ -8,7 +8,7 @@ import { getCurrentUser } from "../api/service/userService";
 import {
   connectWebSocket,
   disconnectWebSocket,
-  sendUserOffline, // ✅ vẫn giữ (chỉ dùng logout)
+  sendUserOffline, 
 } from "../api/websocket";
 import { refresh } from "../api/service/refreshTokenService";
 import { handleLogout } from "../api/service/authService";
@@ -76,19 +76,19 @@ export const UserProvider = ({ children }) => {
     connectWebSocket({
       userId: currentUser.id,
 
-      // ===== PRESENCE =====
-      onPresenceChange: ({ userId, online }) => {
+      
+      onPresenceChange: (data) => {
+       
+      
         setOnlineUsers((prev) => {
           const next = new Set(prev);
-          online ? next.add(userId) : next.delete(userId);
+          data?.online ? next.add(data?.userId) : next.delete(data?.userId);
           return next;
         });
       },
 
-      // ===== SELF ONLINE =====
-      onConnected: (userId) => {
-        setOnlineUsers((prev) => new Set(prev).add(userId));
-      },
+      
+     
     });
 
   

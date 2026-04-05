@@ -93,6 +93,13 @@ export const FriendProvider = ({ children }) => {
           return [res,...filter];
         })
         
+      },
+      onUpdateRequestList:(data)=>{
+        setFriendRequests((prev)=>{
+          const filter=prev.filter((item)=>item?.senderId!==data?.senderId);
+          return filter;
+        })
+        
       }
     })
    
@@ -112,9 +119,6 @@ export const FriendProvider = ({ children }) => {
     };
   }, [currentUser?.id, fetchFriends, fetchFriendRequests]);
 
-  const removeFriendRequest = useCallback((id) => {
-    setFriendRequests((prev) => prev.filter((request) => request.id !== id));
-  }, []);
 
   return (
     <FriendContext.Provider
@@ -125,8 +129,7 @@ export const FriendProvider = ({ children }) => {
         setFriendRequests,
         handleScroll,
         fetchFriends,
-        fetchFriendRequests,
-        removeFriendRequest,
+        fetchFriendRequests
       }}
     >
       {children}
