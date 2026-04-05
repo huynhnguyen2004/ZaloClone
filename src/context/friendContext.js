@@ -9,7 +9,7 @@ import React, {
 import { connectWebSocket, sendUserOnline } from "../api/websocket";
 import { getAllFriend, getAllFriendRequest } from "../api/service/friend";
 import { UserContext } from "./userContext";
-import { data } from "react-router-dom";
+
 
 const FriendContext = createContext();
 
@@ -81,7 +81,17 @@ export const FriendProvider = ({ children }) => {
     connectWebSocket({
       userId:currentUser?.id,
       onFriendList:(data)=>{
-        console.log(data);
+        const res={
+          friendId:data?.friendId,
+          friendName:data?.friendName,
+          online:data?.online,
+          phone:data?.phone,
+          avatarUrl:data?.avatarUrl
+        };
+        setFriends((prev)=>{
+          const filter=prev.filter(item=>item.friendId!==res.friendId);
+          return [res,...filter];
+        })
         
       }
     })
