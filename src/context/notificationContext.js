@@ -26,17 +26,17 @@ export const NotificationProvider = ({ children }) => {
           size: 10,
           ...(lastId && { lastId }),
         });
-        const data = res?.data?.result?.content || [];
+        const data = res?.data?.result || [];
 
         if (!isLoadMore) {
           setLastId(null);
         }
         if (isLoadMore) {
-          setNotifications((pre) => [...data, ...pre]);
+          setNotifications((prev) => [...prev, ...data]);
         } else {
           setNotifications(data);
         }
-        if (data.length > 0) {
+        if (data.length > 0&&isLoadMore) {
           setLastId(data[data.length - 1].id);
         }
       } catch (error) {
