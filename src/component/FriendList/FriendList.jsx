@@ -17,7 +17,7 @@ export default function FriendList() {
   const [removingIds, setRemovingIds] = useState([]);
 
   const handleUnfriend = async (e, friend) => {
-    e.stopPropagation(); // Ngăn không cho click vào card
+    e.stopPropagation(); 
     
     if (!currentUser?.id || removingIds.includes(friend.friendId)) return;
 
@@ -62,7 +62,7 @@ export default function FriendList() {
       title="Xem thông tin"
     />
     {/* Kiểm tra online realtime */}
-    {(isUserOnline(f.friendId) || f.online) && <span className="online-dot"></span>}
+    {(isUserOnline(f.friendId)) && <span className="online-dot"></span>}
   </div>
 
   <div className="friend-info">

@@ -2,7 +2,7 @@ import React from "react";
 import { BiSearch } from "react-icons/bi";
 import FriendList from "../FriendList/FriendList";
 
-function ContactsTabContent({ searchTerm, onSearchChange }) {
+function ContactsTabContent({ searchTerm, onSearchChange, handleScrollFriend }) {
   return (
     <div className="chat-area-container">
       <div className="chat-list-header">
@@ -13,7 +13,6 @@ function ContactsTabContent({ searchTerm, onSearchChange }) {
         <div className="chat-search">
           <BiSearch className="search-icon" />
           <input
-            type="text"
             placeholder="Tìm kiếm bạn bè"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -22,7 +21,9 @@ function ContactsTabContent({ searchTerm, onSearchChange }) {
         </div>
       </div>
 
-      <FriendList />
+      <div className="chat-list-content" onScroll={handleScrollFriend}>
+        <FriendList />
+      </div>
     </div>
   );
 }

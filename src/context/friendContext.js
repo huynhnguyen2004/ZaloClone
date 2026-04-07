@@ -22,33 +22,46 @@ export const FriendProvider = ({ children }) => {
   const [lastId, setLastId] = useState(null);
   const [lastIdFriend, setLastIdFriend] = useState(null);
   const [lastName, setLastName] = useState(null);
+  const [hasNext, setHasNext] = useState(true);
 
-  const fetchFriends = useCallback(async (isLoadMore = false) => {
-    
-    try {
-      const res = await getAllFriend({
-        size: 5,
-        ...(lastName && { lastName }),
-        ...(lastId && { lastId }),
-      });
-      const data = res.data.result ?? [];
-      if(!isLoadMore){
-        setLastIdFriend(null);
-        setLastName(null);
+  const fetchFriends = useCallback(
+    async (isLoadMore = false) => {
+      if (!hasNext) return;
+      try {
+        const cursorLastName = isLoadMore ? lastName : null;
+        const cursorLastId = isLoadMore ? lastIdFriend : null;
+        const res = await getAllFriend({
+          size: 10,
+          ...(cursorLastName && { lastName: cursorLastName }),
+          ...(cursorLastId && { lastId: cursorLastId }),
+        });
+        const data = res.data.result ?? [];
+        if (data.length < 10) {
+          setHasNext(false);
+        }
+
+        if (isLoadMore) {
+          setFriends((prev) => {
+            const map = new Map();
+            [...prev, ...data].forEach((item) => {
+              map.set(item.friendId, item);
+            });
+            return Array.from(map.values());
+          });
+        } else {
+          setFriends(data);
+        }
+        if (data.length > 0) {
+          setLastIdFriend(data[data.length - 1].id);
+          setLastName(data[data.length - 1].friendName.split(" ").slice(-1)[0]);
+        }
+      } catch (err) {
+        console.error("Lỗi fetch bạn bè:", err);
       }
-      if(isLoadMore){
-        setFriends((prev)=>[...prev,...data]);
-      }else{
-        setFriends(data);
-      }
-      if(data.length>0&&isLoadMore){
-        setLastIdFriend(data[data.length-1].id);
-        setLastName(data[data.length-1].lastName);
-      }
-    } catch (err) {
-      console.error("Lỗi fetch bạn bè:", err);
-    }
-  }, [lastName,lastId]);
+    },
+    [lastName, lastIdFriend, hasNext],
+  );
+ 
   const fetchFriendRequests = useCallback(
     async (isLoadMore = false) => {
       try {
@@ -65,7 +78,7 @@ export const FriendProvider = ({ children }) => {
         } else {
           setFriendRequests(data);
         }
-        if (data.length > 0&&isLoadMore) {
+        if (data.length > 0 && isLoadMore) {
           setLastId(data[data.length - 1].id);
         }
       } catch (err) {
@@ -76,12 +89,12 @@ export const FriendProvider = ({ children }) => {
   );
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
-
+ 
     if (scrollTop + clientHeight >= scrollHeight - 50) {
       fetchFriendRequests(true);
     }
   };
-    const handleScrollFriend = (e) => {
+  const handleScrollFriend = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
 
     if (scrollTop + clientHeight >= scrollHeight - 50) {
@@ -100,7 +113,7 @@ export const FriendProvider = ({ children }) => {
     if (wsInitializedRef.current) return;
 
     wsInitializedRef.current = true;
-    fetchFriends(currentUser.id);
+    fetchFriends();
     fetchFriendRequests();
     connectWebSocket({
       userId: currentUser?.id,

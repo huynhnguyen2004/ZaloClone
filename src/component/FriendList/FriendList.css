@@ -26,6 +26,7 @@
 
 /* ===== Friend List Container ===== */
 .friend-list {
+  width: 100%;
   padding: 12px;
   display: flex;
   flex-direction: column;

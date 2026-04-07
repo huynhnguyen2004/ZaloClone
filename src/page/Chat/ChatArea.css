@@ -3,13 +3,20 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 0;
     background-color: #ffffff;
 }
 
 .chat-area-container {
+    flex: 1;
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 0;
+}
+
+.layout-chat-area {
+    min-height: 0;
 }
 
 .chat-list-header {
@@ -118,10 +125,11 @@
 }
 
 .chat-list-content {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    min-height: 0;
+    overflow-y: scroll;
     overflow-x: hidden;
 }
 

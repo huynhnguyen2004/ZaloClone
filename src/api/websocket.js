@@ -2,7 +2,6 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { API_BASE_URL } from "./api";
 import { getAccessToken } from "./tokenStorage";
-import { useRef } from "react";
 
 // =======================
 // GLOBAL STATE
@@ -69,41 +68,44 @@ if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
   const token = getAccessToken();
   const socketUrl = `${WS_BASE_URL}/ws${token ? `?token=${token}` : ""}`;
 
-  stompClient = new Client({
+  const client = new Client({
     webSocketFactory: () =>
       new SockJS(socketUrl, null, { withCredentials: true }),
     reconnectDelay: 2000,
     connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
   });
+  stompClient = client;
 
   // =======================
   // ON CONNECT
   // =======================
-  stompClient.onConnect = () => {
+  client.onConnect = () => {
+    if (!client.connected || stompClient !== client) return;
+
     console.log("🟢 CONNECTED:", userId);
 
-    stompClient.subscribe(`/topic/presence`,(msg)=>{
+    client.subscribe(`/topic/presence`,(msg)=>{
       callbacks.onPresenceChange?.(JSON.parse(msg.body));
     })
-   stompClient.subscribe(`/topic/friend-list/${userId}`,(msg)=>{
+   client.subscribe(`/topic/friend-list/${userId}`,(msg)=>{
     callbacks.onFriendList?.(JSON.parse(msg.body));
    })
 
     // ===== CHAT =====
-    stompClient.subscribe(`/topic/chat/${userId}`, (msg) => {
+    client.subscribe(`/topic/chat/${userId}`, (msg) => {
       callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
    
     // ===== SEEN =====
-    stompClient.subscribe(`/user/${userId}/queue/seen`, (msg) => {
+    client.subscribe(`/user/${userId}/queue/seen`, (msg) => {
       callbacks.onSeenMessage?.(msg.body);
     });
 
-    stompClient.subscribe(`/topic/notification/${userId}`,(msg)=>{
+    client.subscribe(`/topic/notification/${userId}`,(msg)=>{
       callbacks.onReceiveNotification?.(JSON.parse(msg.body));
     })
-    stompClient.subscribe(`/topic/friend-request/${userId}`,(msg)=>{
+    client.subscribe(`/topic/friend-request/${userId}`,(msg)=>{
       callbacks.onUpdateRequestList?.(JSON.parse(msg.body));
       })
 
@@ -125,21 +127,21 @@ if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
   // =======================
   // ERROR
   // =======================
-  stompClient.onStompError = (frame) => {
+  client.onStompError = (frame) => {
     console.error("❌ STOMP ERROR:", frame);
   };
 
   // =======================
   // CLOSE
   // =======================
-  stompClient.onWebSocketClose = () => {
+  client.onWebSocketClose = () => {
     console.warn("🔌 WS CLOSED");
 
     // ❗ KHÔNG gửi OFFLINE
     connectedUserId = null;
   };
 
-  stompClient.activate();
+  client.activate();
 };
 
 // =======================

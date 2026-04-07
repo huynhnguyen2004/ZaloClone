@@ -12,7 +12,7 @@ import ChatsTabContent from "../../component/Tabs/ChatsTabContent";
 import ContactsTabContent from "../../component/Tabs/ContactsTabContent";
 import FriendRequestTabContent from "../../component/Tabs/FriendRequestTabContent";
 import DefaultTabContent from "../../component/Tabs/DefaultTabContent";
-import { useFriend, useSocial } from "../../context/friendContext";
+import { useFriend } from "../../context/friendContext";
 import NotificationsTab from "../../component/Tabs/NotificationsTab";
 
 
@@ -22,7 +22,7 @@ function ChatArea({ activeTab }) {
 
 
   const { currentUser } = useContext(UserContext);
-  const { friendRequests,setFriendRequests } = useFriend();
+  const { friendRequests, setFriendRequests, handleScrollFriend } = useFriend();
   const {activeChat,setActiveChat}=useChat();
 
   useEffect(() => {
@@ -91,6 +91,7 @@ function ChatArea({ activeTab }) {
           <ContactsTabContent
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            handleScrollFriend={handleScrollFriend}
           />
         );
 
