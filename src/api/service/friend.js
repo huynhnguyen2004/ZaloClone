@@ -20,8 +20,12 @@ export const getAllFriend=async(params)=>{
 }
 
 
-export const unFriend = async (params) => {
-  return api.delete("/api/friends/unfriend", {params});
+export const unFriend = async (userId) => {
+  return api.delete("/api/friends/unfriend", {
+    params:{
+      userId:userId
+    }
+  });
 };
 export const unRequestFriend=async (params)=>{
   return api.put("/api/friendrequest/cancele",

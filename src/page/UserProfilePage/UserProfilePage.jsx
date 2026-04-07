@@ -154,7 +154,7 @@ function UserProfilePage() {
     const handleUnfriend = async () => {
         try {
             setActionLoading(true);
-            await unFriend({ user1Id: currentUser.id, user2Id: userId });
+            await unFriend( userId );
             setProfile(prev => ({ ...prev, relationshipStatus: RelationshipStatus.NONE }));
             setShowUnfriendConfirm(false);
             setShowOptions(false);

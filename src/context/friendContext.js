@@ -61,7 +61,7 @@ export const FriendProvider = ({ children }) => {
     },
     [lastName, lastIdFriend, hasNext],
   );
- 
+
   const fetchFriendRequests = useCallback(
     async (isLoadMore = false) => {
       try {
@@ -89,7 +89,7 @@ export const FriendProvider = ({ children }) => {
   );
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
- 
+
     if (scrollTop + clientHeight >= scrollHeight - 50) {
       fetchFriendRequests(true);
     }
@@ -125,8 +125,16 @@ export const FriendProvider = ({ children }) => {
           phone: data?.phone,
           avatarUrl: data?.avatarUrl,
         };
+        if (!res?.friendName) {
+          
+          setFriends((prev) =>
+            prev.filter((item) => item.friendId !== res.friendId),
+          );
+          return;
+        }
+
         setFriends((prev) => {
-          const filter = prev.filter((item) => item.friendId !== res.friendId);
+          const filter = prev.filter((item) => item.friendId !== data.friendId);
           return [res, ...filter];
         });
       },

@@ -19,12 +19,13 @@ export default function FriendList() {
   const handleUnfriend = async (e, friend) => {
     e.stopPropagation(); 
     
+    
     if (!currentUser?.id || removingIds.includes(friend.friendId)) return;
 
     setRemovingIds((prev) => [...prev, friend.friendId]);
 
     try {
-      await unFriend({ user1Id: currentUser.id, user2Id: friend.friendId });
+      await unFriend( friend?.friendId );
       // Xóa bạn khỏi danh sách
       setFriends((prev) => prev.filter((f) => f.friendId !== friend.friendId));
     } catch (err) {
@@ -50,6 +51,7 @@ export default function FriendList() {
 
 
   return (
+   
     <div className="friend-list">
       {friends.map((f) => (
        <div key={f.friendId} className="friend-card" onClick={()=>openChat(f)}>
