@@ -5,8 +5,8 @@ import ChatArea from "../../page/Chat/ChatArea";
 import Modal from "../../component/Modal/Modal";
 
 import "./CustomerLayout.css";
-import ChatWindow from "../../component/ChatWindow/ChatWindow";
-import { useChat } from "../../context/chatContext";
+import ChatWindow from "../../component/ChatWindow/chatWindow";
+import { useChat } from "../../context/ChatContext";
 import { UserContext } from "../../context/userContext";
 import { useNavigate } from "react-router-dom";
 import CustomerHeader from "../../component/layout/Customer/CustomerHeader";

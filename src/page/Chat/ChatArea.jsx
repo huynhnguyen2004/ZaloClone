@@ -6,7 +6,7 @@ import {
 } from "../../api/service/friend";
 
 import "./ChatArea.css";
-import { useChat } from "../../context/chatContext";
+import { useChat } from "../../context/ChatContext";
 import { UserContext } from "../../context/userContext";
 import ChatsTabContent from "../../component/Tabs/ChatsTabContent";
 import ContactsTabContent from "../../component/Tabs/ContactsTabContent";

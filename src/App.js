@@ -6,7 +6,7 @@ import ProfilePage from "./page/ProfilePage/ProfilePage";
 import UserProfilePage from "./page/UserProfilePage/UserProfilePage";
 
 import "./App.css";
-import { ChatProvider } from "./context/chatContext";
+import { ChatProvider } from "./context/ChatContext";
 // Admin Pages
 import AdminDashboard from "./page/Admin/AdminDashboard/AdminDashboard";
 import AdminUsers from "./page/Admin/AdminUsers/AdminUsers";

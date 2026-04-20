@@ -4,36 +4,81 @@ import { getOrCreateConversation } from "../api/service/conversation";
 import {
   connectWebSocket,
   disconnectWebSocket,
-  subscribeToConversationSeen,
-  unsubscribeFromConversationSeen,
 } from "../api/websocket";
 import { UserContext } from "./userContext";
 
-
 const ChatContext = createContext();
 export const useChat = () => useContext(ChatContext);
+
+const PAGE_SIZE = 20;
+
+const emptyPage = {
+  messages: [],
+  nextBefore: null,
+  nextAfter: null,
+};
+
+const getConversationId = (message) =>
+  message?.conversation?.id ?? message?.conversationId ?? null;
+
+const getSenderId = (message) => Number(message?.sender?.id ?? message?.senderId ?? 0);
+
+const normalizeMessageList = (list = []) => {
+  const uniqueMap = new Map();
+
+  list.forEach((message) => {
+    if (message?.id == null) return;
+    uniqueMap.set(message.id, message);
+  });
+
+  return [...uniqueMap.values()].sort((a, b) => Number(a.id) - Number(b.id));
+};
+
+const normalizePage = (page) => {
+  const normalizedMessages = normalizeMessageList(page?.messages ?? []);
+
+  return {
+    messages: normalizedMessages,
+    nextBefore:
+      page?.nextBefore ??
+      (normalizedMessages.length ? normalizedMessages[0].id : null),
+    nextAfter:
+      page?.nextAfter ??
+      (normalizedMessages.length
+        ? normalizedMessages[normalizedMessages.length - 1].id
+        : null),
+  };
+};
 
 export function ChatProvider({ children }) {
   // ==========================
   // STATE
   // ==========================
   const [activeChat, setActiveChat] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(emptyPage);
   const [unreadCount, setUnreadCount] = useState(0); // Số tin nhắn chưa đọc
   const [seenByFriend, setSeenByFriend] = useState(false);
-  const [newMessageTrigger, setNewMessageTrigger] = useState(0); // Trigger để refresh conversation list
-const [activeTab,setActiveTab]=useState("chats");
+  const [newMessageTrigger, setNewMessageTrigger] = useState(0);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
+  const [isLoadingNewerMessages, setIsLoadingNewerMessages] = useState(false);
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(true);
+  const [activeTab, setActiveTab] = useState("chats");
   const { currentUser } = useContext(UserContext);
 
   // ==========================
   // REFS
   // ==========================
   const activeChatRef = useRef(null);
-  const addedMessageIds = useRef(new Set());
+  const currentUserIdRef = useRef(null);
+
 
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
+
+  useEffect(() => {
+    currentUserIdRef.current = currentUser?.id ?? null;
+  }, [currentUser?.id]);
 
   // ==========================
   // 🔥 WEBSOCKET CONNECT
@@ -44,143 +89,210 @@ const [activeTab,setActiveTab]=useState("chats");
     connectWebSocket({
       userId: currentUser.id,
 
-      // ==========================
-      // 👁️ SEEN EVENT (realtime)
-      // ==========================
+      // Friend đã xem tin nhắn của mình trong cuộc trò chuyện đang mở.
       onSeenMessage: (seenUserId) => {
         const chat = activeChatRef.current;
         if (!chat) return;
 
-        const myId = Number(currentUser.id);
-        const friendId = Number(chat.friendId);
-        const seenId = Number(seenUserId);
+        if (Number(seenUserId) !== Number(chat.friendId)) return;
 
-        if (seenId === friendId) {
-          console.log("👁️ Friend has seen messages (realtime)");
-
-          setSeenByFriend(true);
-          setMessages((prev) =>
-            prev.map((msg) =>
-              Number(msg.senderId || msg.sender?.id) === myId
-                ? { ...msg, read: true }
-                : msg
-            )
-          );
-        }
+        setSeenByFriend(true);
+        setMessages((prev) => ({
+          ...prev,
+          messages: prev.messages.map((message) =>
+            getSenderId(message) === Number(currentUser.id)
+              ? { ...message, read: true }
+              : message,
+          ),
+        }));
       },
 
-      // ==========================
-      // 📨 RECEIVE MESSAGE
-      // ==========================
-      onReceiveMessage: (msg) => {
+      // Nhận tin nhắn realtime và merge vào page hiện tại nếu đúng conversation.
+      onReceiveMessage: (message) => {
         const chat = activeChatRef.current;
-        const msgConversationId = msg.conversation?.id || msg.conversationId;
-        const senderId = Number(msg.sender?.id || msg.senderId);
-        const myId = Number(currentUser.id);
+        const incomingConversationId = getConversationId(message);
+        if (!incomingConversationId) return;
 
-        // Nếu tin nhắn do mình gửi
-        if (senderId === myId) {
-          if (chat && msgConversationId === chat.conversationId) {
-            if (!addedMessageIds.current.has(msg.id)) {
-              addedMessageIds.current.add(msg.id);
-              setMessages((prev) => [...prev, msg]);
-              setSeenByFriend(false);
-            }
+        if (Number(chat?.conversationId) === Number(incomingConversationId)) {
+          setMessages((prev) => {
+            const mergedMessages = normalizeMessageList([...prev.messages, message]);
+
+            return {
+              ...prev,
+              messages: mergedMessages,
+              nextAfter: mergedMessages.length
+                ? mergedMessages[mergedMessages.length - 1].id
+                : prev.nextAfter,
+            };
+          });
+
+          if (getSenderId(message) !== Number(currentUserIdRef.current)) {
+            setSeenByFriend(false);
+            readMessage(incomingConversationId).catch((error) => {
+              console.error("❌ Read message error:", error);
+            });
           }
+
+          setNewMessageTrigger((prev) => prev + 1);
           return;
         }
 
-        // 🔥 Tin nhắn từ người khác
-        // Nếu đang mở đúng chat → thêm tin nhắn vào
-        if (chat && chat.conversationId === msgConversationId) {
-          const friendId = Number(chat.friendId);
-
-          if (addedMessageIds.current.has(msg.id)) return;
-
-          addedMessageIds.current.add(msg.id);
-          setMessages((prev) => [...prev, msg]);
-
-          // Tin nhắn từ bạn bè → auto read
-          if (senderId === friendId) {
-            readMessage(chat.conversationId, myId).catch(console.error);
-          }
-        } else {
-          // 🔔 Không đang mở chat này → tăng số tin nhắn chưa đọc
-          setUnreadCount((prev) => prev + 1);
-        }
-        
-        // 🔄 Trigger refresh conversation list khi nhận tin nhắn mới
+        setUnreadCount((prev) => prev + 1);
         setNewMessageTrigger((prev) => prev + 1);
       },
+      onReceiveReact:(msg)=>{
+        console.log(msg);
+        
+      }
     });
 
     return () => disconnectWebSocket();
   }, [currentUser?.id]);
 
-  // ==========================
-  // 🔔 SUBSCRIBE SEEN (khi đổi chat)
-  // ==========================
-  useEffect(() => {
-    if (!activeChat?.conversationId || !currentUser?.id) return;
-
-    const conversationId = activeChat.conversationId;
-    const friendId = activeChat.friendId;
-    const myId = currentUser.id;
-
-    const handleSeen = (seenUserId) => {
-      const seenId = Number(seenUserId);
-
-      if (seenId === Number(friendId)) {
-        console.log("👁️ Seen realtime callback");
-
-        setSeenByFriend(true);
-        setMessages((prev) =>
-          prev.map((msg) =>
-            Number(msg.senderId || msg.sender?.id) === Number(myId)
-              ? { ...msg, read: true }
-              : msg
-          )
-        );
-      }
-    };
-
-    subscribeToConversationSeen(conversationId, handleSeen);
-
-    return () => {
-      unsubscribeFromConversationSeen();
-    };
-  }, [activeChat?.conversationId, activeChat?.friendId, currentUser?.id]);
 
   // ==========================
-  // 🔥 OPEN CHAT
+  // OPEN CHAT + FIRST PAGE
   // ==========================
   const openChat = async (friend) => {
     if (!currentUser?.id || !friend?.friendId) return;
 
     try {
-      setMessages([]);
-      addedMessageIds.current.clear();
+      setMessages(emptyPage);
       setSeenByFriend(false);
+      setHasMoreOlderMessages(true);
 
-      const { conversationId } = await getOrCreateConversation(
-        currentUser.id,
-        friend.friendId
-      );
+      const data = await getOrCreateConversation({
+        userId: friend.friendId,
+      });
+
+      const conversationId = data.conversationId;
 
       const chat = { ...friend, conversationId };
       setActiveChat(chat);
 
-      const list = await getMessage(conversationId);
-      addedMessageIds.current = new Set(list.map((m) => m.id));
-      setMessages(list);
+      const page = await getMessage({ conversationId, size: PAGE_SIZE });
+      const normalizedPage = normalizePage(page);
+
+      setMessages(normalizedPage);
+      setHasMoreOlderMessages((normalizedPage.messages ?? []).length === PAGE_SIZE);
 
       // Reset số tin nhắn chưa đọc khi mở chat
       setUnreadCount(0);
 
-      await readMessage(conversationId, currentUser.id);
+      await readMessage(conversationId);
+      setNewMessageTrigger((prev) => prev + 1);
     } catch (err) {
       console.error("❌ Open chat error:", err);
     }
+  };
+
+  // ==========================
+  // CURSOR PAGINATION - BEFORE
+  // ==========================
+  const loadOlderMessages = async () => {
+    if (!activeChat?.conversationId || isLoadingOlderMessages || !hasMoreOlderMessages) {
+      return [];
+    }
+
+    const before = messages?.nextBefore;
+    if (!before) {
+      setHasMoreOlderMessages(false);
+      return [];
+    }
+
+    setIsLoadingOlderMessages(true);
+
+    try {
+      const page = await getMessage({
+        conversationId: activeChat.conversationId,
+        before,
+        size: PAGE_SIZE,
+      });
+
+      const normalizedPage = normalizePage(page);
+
+      setMessages((prev) => {
+        const mergedMessages = normalizeMessageList([
+          ...normalizedPage.messages,
+          ...prev.messages,
+        ]);
+
+        return {
+          ...prev,
+          messages: mergedMessages,
+          nextBefore: normalizedPage.nextBefore,
+        };
+      });
+
+      setHasMoreOlderMessages(normalizedPage.messages.length === PAGE_SIZE);
+      return normalizedPage.messages;
+    } catch (error) {
+      console.error("❌ Load older messages error:", error);
+      return [];
+    } finally {
+      setIsLoadingOlderMessages(false);
+    }
+  };
+
+  // ==========================
+  // CURSOR PAGINATION - AFTER
+  // ==========================
+  const loadNewerMessages = async () => {
+    if (!activeChat?.conversationId || isLoadingNewerMessages) {
+      return [];
+    }
+
+    const after = messages?.nextAfter;
+    if (!after) {
+      return [];
+    }
+
+    setIsLoadingNewerMessages(true);
+
+    try {
+      const page = await getMessage({
+        conversationId: activeChat.conversationId,
+        after,
+        size: PAGE_SIZE,
+      });
+
+      const normalizedPage = normalizePage(page);
+
+      setMessages((prev) => {
+        const mergedMessages = normalizeMessageList([
+          ...prev.messages,
+          ...normalizedPage.messages,
+        ]);
+
+        return {
+          ...prev,
+          messages: mergedMessages,
+          nextAfter: normalizedPage.nextAfter,
+        };
+      });
+
+      return normalizedPage.messages;
+    } catch (error) {
+      console.error("❌ Load newer messages error:", error);
+      return [];
+    } finally {
+      setIsLoadingNewerMessages(false);
+    }
+  };
+
+  // Append local message sau khi send thành công.
+  const appendMessage = (message) => {
+    setMessages((prev) => {
+      const mergedMessages = normalizeMessageList([...prev.messages, message]);
+
+      return {
+        ...prev,
+        messages: mergedMessages,
+        nextAfter: mergedMessages.length
+          ? mergedMessages[mergedMessages.length - 1].id
+          : prev.nextAfter,
+      };
+    });
   };
 
   // ==========================
@@ -205,6 +317,11 @@ const [activeTab,setActiveTab]=useState("chats");
         unreadCount,
         clearUnread,
         newMessageTrigger,
+        loadOlderMessages,
+        loadNewerMessages,
+        appendMessage,
+        isLoadingOlderMessages,
+        hasMoreOlderMessages,
       }}
     >
       {children}

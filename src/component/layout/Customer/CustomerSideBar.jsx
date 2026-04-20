@@ -4,7 +4,7 @@ import {
     BiUserPlus,
 } from "react-icons/bi";
 import { HiOutlineUsers } from "react-icons/hi";
-import { useChat } from "../../../context/chatContext";
+import { useChat } from "../../../context/ChatContext";
 import { getAvatarUrl } from "../../../utils/avatarHelper";
 import "./CustomerSideBar.css";
 import { UserContext } from "../../../context/userContext";

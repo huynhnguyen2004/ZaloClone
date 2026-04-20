@@ -15,7 +15,7 @@ import {
 } from "react-icons/bi";
 import { FaUserClock, FaUserTimes } from "react-icons/fa";
 import { useFriend, useSocial } from "../../context/friendContext";
-import { useChat } from "../../context/chatContext";
+import { useChat } from "../../context/ChatContext";
 import { seenProfile } from "../../api/service/userService";
 import { 
     sendFriendRequest, 

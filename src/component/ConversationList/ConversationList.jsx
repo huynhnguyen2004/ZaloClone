@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
-import { useChat } from "../../context/chatContext";
+import { useChat } from "../../context/ChatContext";
 import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
@@ -22,7 +22,7 @@ export default function ConversationList() {
       if (!currentUser?.id) return;
 
       try {
-        const data = await getMyConversations(currentUser.id);
+        const data = await getMyConversations();
         // Sắp xếp theo thời gian tin nhắn mới nhất lên đầu
         const sorted = (data || []).sort((a, b) => {
           const timeA = new Date(a.createdAt || 0).getTime();

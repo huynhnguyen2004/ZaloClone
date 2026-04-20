@@ -1,23 +1,34 @@
 // ChatWindow.jsx
 import { useNavigate } from "react-router-dom";
-import { useChat } from "../../context/chatContext";
+import { useChat } from "../../context/ChatContext";
 import "./ChatWindow.css";
 import { BiArrowBack } from "react-icons/bi";
 import { FiPhone, FiVideo } from "react-icons/fi";
-import { useContext, useEffect, useRef, useState } from "react";
-import { useSocial } from "../../context/friendContext";
-import { sendMessage,readMessage } from "../../api/service/chat";
+import { useContext, useLayoutEffect, useRef, useState } from "react";
+import { sendMessage } from "../../api/service/chat";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
 
 export default function ChatWindow({ onCloseChat }) {
   const navigate = useNavigate();
-  const { activeChat, messages, setMessages } = useChat();
+  const {
+    activeChat,
+    messages,
+    appendMessage,
+    loadOlderMessages,
+    isLoadingOlderMessages,
+    hasMoreOlderMessages,
+  } = useChat();
   const { currentUser,isUserOnline } = useContext(UserContext);
   
   const [text, setText] = useState("");
   const endRef = useRef();
-  const pendingMessageIds = useRef(new Set()); // 🔥 Track pending messages
+  const bodyRef = useRef();
+  const preserveScrollRef = useRef(false);
+  const previousScrollTopRef = useRef(0);
+  const previousScrollHeightRef = useRef(0);
+
+  const messageList = messages?.messages ?? [];
 
   // 🔥 Kiểm tra trạng thái online realtime
   const isFriendOnline = isUserOnline(activeChat?.friendId) || activeChat?.online;
@@ -52,9 +63,44 @@ export default function ChatWindow({ onCloseChat }) {
     return "Ngoại tuyến";
   };
 
-  useEffect(() => {
-    if (endRef.current) endRef.current.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useLayoutEffect(() => {
+    const body = bodyRef.current;
+
+    if (!body) return;
+
+    // Khi prepend lịch sử cũ, giữ nguyên vị trí người dùng đang đọc.
+    if (preserveScrollRef.current) {
+      const heightDelta = body.scrollHeight - previousScrollHeightRef.current;
+      body.scrollTop = previousScrollTopRef.current + heightDelta;
+      preserveScrollRef.current = false;
+      return;
+    }
+
+    // Mặc định luôn kéo xuống tin nhắn mới nhất.
+    body.scrollTop = body.scrollHeight;
+  }, [messageList.length]);
+
+  const handleScroll = async () => {
+    const body = bodyRef.current;
+
+    if (
+      !body ||
+      body.scrollTop > 80 ||
+      !hasMoreOlderMessages ||
+      isLoadingOlderMessages
+    ) {
+      return;
+    }
+
+    previousScrollTopRef.current = body.scrollTop;
+    previousScrollHeightRef.current = body.scrollHeight;
+    preserveScrollRef.current = true;
+
+    const older = await loadOlderMessages();
+    if (!older.length) {
+      preserveScrollRef.current = false;
+    }
+  };
 
   if (!activeChat)
     return <div className="empty-chat">Chọn 1 người để nhắn</div>;
@@ -69,48 +115,27 @@ export default function ChatWindow({ onCloseChat }) {
 
   // 🚀 Gửi tin nhắn
   const handleSend = async () => {
-    if (!text.trim()) return;
+    const content = text.trim();
+    if (!content) return;
 
     const msgBody = {
       senderId: currentUser.id,
       receiverId: activeChat.friendId,
-      conversationId: activeChat.conversationId, // 🔥 Thêm conversationId
-      content: text,
+      conversationId: activeChat.conversationId,
+      content,
     };
 
     setText("");
 
     try {
-      // 🔥 Lưu DB và lấy real ID
       const saved = await sendMessage(msgBody);
-      console.log("✅ Message saved:", saved);
-
-      // 🔥 Mark ID này là "pending" - đừng thêm từ WebSocket
-      pendingMessageIds.current.add(saved.id);
-
-      // 🔥 Thêm vào UI ngay
-      setMessages((prev) => {
-        // Double-check không duplicate
-        if (prev.some((m) => m.id === saved.id)) {
-          console.log("⚠️ Message already exists:", saved.id);
-          return prev;
-        }
-        return [...prev, saved];
-      });
-
-      
-
-   
-
-      // 🔥 Sau 1 giây, remove khỏi pending (phòng trường hợp WebSocket chậm)
-      setTimeout(() => {
-        pendingMessageIds.current.delete(saved.id);
-      }, 1000);
+      appendMessage(saved);
     } catch (err) {
       console.error("❌ Send message failed:", err);
     }
   };
 
+  
   return (
     <div className="chat-window">
       {/* HEADER */}
@@ -154,14 +179,19 @@ export default function ChatWindow({ onCloseChat }) {
         </div>
       </div>
 
+
       {/* BODY */}
-      <div className="chat-body">
-        {messages.map((msg, index) => {
-          const senderId = msg.senderId || msg.sender?.id;
+      <div className="chat-body" ref={bodyRef} onScroll={handleScroll}>
+        {isLoadingOlderMessages && (
+          <div className="chat-history-loading">Đang tải tin nhắn cũ...</div>
+        )}
+
+        {messageList.map((msg) => {
+          const senderId = msg.senderId ;
           const isMe = senderId === currentUser.id;
           
           // Tìm tin nhắn cuối cùng của mình đã được xem
-          const myMessages = messages.filter(m => (m.senderId || m.sender?.id) === currentUser.id);
+          const myMessages = messageList.filter(m => (m.senderId ) === currentUser.id);
           const lastReadMessage = [...myMessages].reverse().find(m => m.read === true);
           const isLastReadMessage = isMe && msg.read === true && msg.id === lastReadMessage?.id;
           

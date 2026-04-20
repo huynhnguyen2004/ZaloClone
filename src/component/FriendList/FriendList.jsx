@@ -4,7 +4,7 @@ import { BiUserMinus } from "react-icons/bi";
 import "./FriendList.css";
 
 import { useFriend} from "../../context/friendContext";
-import { useChat } from "../../context/chatContext";
+import { useChat } from "../../context/ChatContext";
 import { unFriend } from "../../api/service/friend";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
