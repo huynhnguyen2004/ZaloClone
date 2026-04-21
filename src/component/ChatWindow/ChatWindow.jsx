@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useChat } from "../../context/ChatContext";
 import "./ChatWindow.css";
 import { BiArrowBack } from "react-icons/bi";
-import { FiPhone, FiVideo } from "react-icons/fi";
-import { useContext, useLayoutEffect, useRef, useState } from "react";
+import { FiPaperclip, FiPhone, FiSend, FiSmile, FiVideo } from "react-icons/fi";
+import { useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { sendMessage } from "../../api/service/chat";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
@@ -19,16 +19,24 @@ export default function ChatWindow({ onCloseChat }) {
     isLoadingOlderMessages,
     hasMoreOlderMessages,
   } = useChat();
-  const { currentUser,isUserOnline } = useContext(UserContext);
+  const { currentUser, isUserOnline } = useContext(UserContext);
   
   const [text, setText] = useState("");
-  const endRef = useRef();
   const bodyRef = useRef();
   const preserveScrollRef = useRef(false);
   const previousScrollTopRef = useRef(0);
   const previousScrollHeightRef = useRef(0);
 
   const messageList = messages?.messages ?? [];
+
+  const lastReadMessageId = useMemo(() => {
+    const myMessages = messageList.filter(
+      (message) => Number(message?.senderId) === Number(currentUser?.id),
+    );
+    const lastReadMessage = [...myMessages].reverse().find((message) => message.read === true);
+
+    return lastReadMessage?.id;
+  }, [messageList, currentUser?.id]);
 
   // 🔥 Kiểm tra trạng thái online realtime
   const isFriendOnline = isUserOnline(activeChat?.friendId) || activeChat?.online;
@@ -102,8 +110,7 @@ export default function ChatWindow({ onCloseChat }) {
     }
   };
 
-  if (!activeChat)
-    return <div className="empty-chat">Chọn 1 người để nhắn</div>;
+  if (!activeChat) return <div className="empty-chat">Chọn 1 người để nhắn</div>;
 
   const formatTime = (t) => {
     const d = new Date(t);
@@ -135,12 +142,11 @@ export default function ChatWindow({ onCloseChat }) {
     }
   };
 
-  
   return (
     <div className="chat-window">
       {/* HEADER */}
       <div className="chat-header">
-        <button className="back-btn" onClick={onCloseChat}>
+        <button className="back-btn" type="button" onClick={onCloseChat}>
           <BiArrowBack size={22} />
         </button>
 
@@ -170,10 +176,10 @@ export default function ChatWindow({ onCloseChat }) {
         </div>
 
         <div className="chat-actions">
-          <button className="chat-action-btn">
+          <button type="button" className="chat-action-btn" aria-label="Gọi thoại">
             <FiPhone size={20} />
           </button>
-          <button className="chat-action-btn">
+          <button type="button" className="chat-action-btn" aria-label="Gọi video">
             <FiVideo size={20} />
           </button>
         </div>
@@ -187,35 +193,42 @@ export default function ChatWindow({ onCloseChat }) {
         )}
 
         {messageList.map((msg) => {
-          const senderId = msg.senderId ;
-          const isMe = senderId === currentUser.id;
-          
-          // Tìm tin nhắn cuối cùng của mình đã được xem
-          const myMessages = messageList.filter(m => (m.senderId ) === currentUser.id);
-          const lastReadMessage = [...myMessages].reverse().find(m => m.read === true);
-          const isLastReadMessage = isMe && msg.read === true && msg.id === lastReadMessage?.id;
+          const senderId = Number(msg?.senderId);
+          const isMe = senderId === Number(currentUser?.id);
+          const isLastReadMessage = isMe && msg.read === true && msg.id === lastReadMessageId;
           
           return (
             <div
               key={msg.id}
-              className={`bubble ${isMe ? "right" : "left"}`}
+              className={`message-row ${isMe ? "right" : "left"}`}
             >
-              <p className="text">{msg.content}</p>
-              <div className="bubble-footer">
-                <span className="time">{formatTime(msg.createdAt)}</span>
-                {isLastReadMessage && (
-                  <span className="seen-status">Đã xem</span>
-                )}
+              {!isMe && (
+                <img
+                  src={getAvatarUrl(activeChat.avatarUrl)}
+                  alt={activeChat.friendName}
+                  className="bubble-avatar"
+                />
+              )}
+
+              <div className={`bubble ${isMe ? "right" : "left"}`}>
+                <p className="text">{msg.content}</p>
+                <div className="bubble-footer">
+                  <span className="time">{formatTime(msg.createdAt)}</span>
+                  {isLastReadMessage && (
+                    <span className="seen-status">Đã xem</span>
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
-
-        <div ref={endRef}></div>
       </div>
 
       {/* INPUT */}
       <div className="chat-input">
+        <button type="button" className="input-icon-btn" aria-label="Đính kèm tệp">
+          <FiPaperclip size={18} />
+        </button>
         <input
           type="text"
           placeholder="Nhập tin nhắn..."
@@ -223,8 +236,11 @@ export default function ChatWindow({ onCloseChat }) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
-        <button className="send-btn" onClick={handleSend}>
-          Gửi
+        <button type="button" className="input-icon-btn" aria-label="Biểu cảm">
+          <FiSmile size={18} />
+        </button>
+        <button type="button" className="send-btn" onClick={handleSend}>
+          <FiSend size={18} />
         </button>
       </div>
     </div>

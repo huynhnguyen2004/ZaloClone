@@ -108,8 +108,6 @@ if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
       callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
-    
-   
     client.subscribe(`/topic/notification/${userId}`,(msg)=>{
       callbacks.onReceiveNotification?.(JSON.parse(msg.body));
     })
