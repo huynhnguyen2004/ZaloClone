@@ -4,7 +4,13 @@ export const sendMessage = async (data) => {
   const res = await api.post("/api/message/send", data);
   return res.data.result;
 };
+export const sendReact = async (params) => {
+  const res = await api.post("/api/message/react", null, {
+    params,
+  });
 
+  return res.data.result;
+}
 export const getMessage = async ({
   conversationId,
   before,

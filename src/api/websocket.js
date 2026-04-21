@@ -13,6 +13,7 @@ const callbacks = {
   onFriendList:null,
   onReceiveMessage: null,
   onSeenMessage: null,
+  onReceiveReact: null,
   onConnected: null,
   onReceiveNotification:null,
   onUpdateRequestList:null,
@@ -44,6 +45,7 @@ export const connectWebSocket = ({
   onFriendList,
   onReceiveMessage,
   onSeenMessage,
+  onReceiveReact,
   onReceiveNotification,
   onUpdateRequestList,
    onPresenceChange
@@ -55,6 +57,7 @@ export const connectWebSocket = ({
 if(onFriendList!==undefined) callbacks.onFriendList=onFriendList
 if (onReceiveMessage !== undefined) callbacks.onReceiveMessage = onReceiveMessage;
 if (onSeenMessage !== undefined) callbacks.onSeenMessage = onSeenMessage;
+if (onReceiveReact !== undefined) callbacks.onReceiveReact = onReceiveReact;
 if(onReceiveNotification!==undefined) callbacks.onReceiveNotification=onReceiveNotification;
 if(onUpdateRequestList!==undefined) callbacks.onUpdateRequestList=onUpdateRequestList;
 if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
@@ -105,7 +108,14 @@ if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
 
     // ===== CHAT =====
     client.subscribe(`/topic/chat/${userId}`, (msg) => {
-      callbacks.onReceiveMessage?.(JSON.parse(msg.body));
+      const payload = parseMessageBody(msg.body);
+      callbacks.onReceiveMessage?.(payload);
+    });
+
+    // ===== REACT =====
+    client.subscribe(`/topic/react/${userId}`, (msg) => {
+      const payload = parseMessageBody(msg.body);
+      callbacks.onReceiveReact?.(payload);
     });
 
     client.subscribe(`/topic/notification/${userId}`,(msg)=>{

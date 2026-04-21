@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { getMessage, readMessage } from "../api/service/chat";
+import { getMessage, readMessage, sendReact } from "../api/service/chat";
 import { getOrCreateConversation } from "../api/service/conversation";
 import {
   connectWebSocket,
@@ -52,6 +52,70 @@ const normalizePage = (page) => {
   };
 };
 
+const mergeMessageById = (list = [], incomingMessage) => {
+  if (!incomingMessage?.id) {
+    return list;
+  }
+
+  const nextList = [...list];
+  const nextIndex = nextList.findIndex(
+    (message) => Number(message?.id) === Number(incomingMessage.id),
+  );
+
+  if (nextIndex === -1) {
+    nextList.push(incomingMessage);
+  } else {
+    nextList[nextIndex] = {
+      ...nextList[nextIndex],
+      ...incomingMessage,
+      reacts: Array.isArray(incomingMessage.reacts)
+        ? incomingMessage.reacts
+        : nextList[nextIndex].reacts,
+    };
+  }
+
+  return normalizeMessageList(nextList);
+};
+
+const mergeReactIntoMessageList = (list = [], reactPayload) => {
+  const messageId = Number(reactPayload?.messageId);
+  if (!messageId) return list;
+
+  return list.map((message) => {
+    if (Number(message?.id) !== messageId) return message;
+
+    const currentReacts = Array.isArray(message?.reacts) ? message.reacts : [];
+    const nextReacts = [...currentReacts];
+
+    const sameUserIndex = nextReacts.findIndex((react) => {
+      if (react?.userId != null && reactPayload?.userId != null) {
+        return Number(react.userId) === Number(reactPayload.userId);
+      }
+
+      return (
+        String(react?.userFirstName || "") ===
+          String(reactPayload?.userFirstName || "") &&
+        String(react?.userLastName || "") ===
+          String(reactPayload?.userLastName || "")
+      );
+    });
+
+    if (sameUserIndex === -1) {
+      nextReacts.push(reactPayload);
+    } else {
+      nextReacts[sameUserIndex] = {
+        ...nextReacts[sameUserIndex],
+        ...reactPayload,
+      };
+    }
+
+    return {
+      ...message,
+      reacts: nextReacts,
+    };
+  });
+};
+
 const getSeenUserId = (payload) => {
   if (payload == null) return null;
   if (typeof payload === "object") {
@@ -82,11 +146,16 @@ export function ChatProvider({ children }) {
   // ==========================
   const activeChatRef = useRef(null);
   const currentUserIdRef = useRef(null);
+  const messagesRef = useRef(emptyPage);
 
 
   useEffect(() => {
     activeChatRef.current = activeChat;
   }, [activeChat]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     currentUserIdRef.current = currentUser?.id ?? null;
@@ -107,11 +176,16 @@ export function ChatProvider({ children }) {
         const incomingConversationId = getConversationId(message);
         if (!incomingConversationId) return;
 
-        setLastRealtimeMessage(message);
+        const existingMessage = messagesRef.current.messages.some(
+          (item) => Number(item?.id) === Number(message?.id),
+        );
+        if (!existingMessage) {
+          setLastRealtimeMessage(message);
+        }
 
         if (Number(chat?.conversationId) === Number(incomingConversationId)) {
           setMessages((prev) => {
-            const mergedMessages = normalizeMessageList([...prev.messages, message]);
+            const mergedMessages = mergeMessageById(prev.messages, message);
 
             return {
               ...prev,
@@ -121,6 +195,10 @@ export function ChatProvider({ children }) {
                 : prev.nextAfter,
             };
           });
+
+          if (existingMessage) {
+            return;
+          }
 
           if (getSenderId(message) !== Number(currentUserIdRef.current)) {
             setSeenByFriend(false);
@@ -136,9 +214,20 @@ export function ChatProvider({ children }) {
         setUnreadCount((prev) => prev + 1);
         setNewMessageTrigger((prev) => prev + 1);
       },
-      onReceiveReact:(msg)=>{
-        console.log(msg);
+      onReceiveReact: (reactPayload) => {
         
+        if (!reactPayload?.messageId) return;
+
+        const messageExists = messagesRef.current.messages.some(
+          (item) => Number(item?.id) === Number(reactPayload?.messageId),
+        );
+
+        if (!messageExists) return;
+
+        setMessages((prev) => ({
+          ...prev,
+          messages: mergeReactIntoMessageList(prev.messages, reactPayload),
+        }));
       }
     });
 
@@ -313,7 +402,7 @@ export function ChatProvider({ children }) {
   // Append local message sau khi send thành công.
   const appendMessage = (message) => {
     setMessages((prev) => {
-      const mergedMessages = normalizeMessageList([...prev.messages, message]);
+      const mergedMessages = mergeMessageById(prev.messages, message);
 
       return {
         ...prev,
@@ -329,6 +418,27 @@ export function ChatProvider({ children }) {
   // CLEAR UNREAD
   // ==========================
   const clearUnread = () => setUnreadCount(0);
+
+  const reactToMessage = async ({ messageId, reactTypeId }) => {
+    if (!currentUser?.id || !messageId || !reactTypeId) return null;
+
+    try {
+      const response = await sendReact({ messageId, reactTypeId });
+      if (response) {
+        setMessages((prev) => ({
+          ...prev,
+          messages: response?.id
+            ? mergeMessageById(prev.messages, response)
+            : mergeReactIntoMessageList(prev.messages, response),
+        }));
+      }
+
+      return response;
+    } catch (error) {
+      console.error("❌ Send react error:", error);
+      return null;
+    }
+  };
 
   // ==========================
   // PROVIDER
@@ -351,6 +461,7 @@ export function ChatProvider({ children }) {
         loadOlderMessages,
         loadNewerMessages,
         appendMessage,
+        reactToMessage,
         isLoadingOlderMessages,
         hasMoreOlderMessages,
       }}

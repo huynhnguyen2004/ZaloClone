@@ -4,7 +4,10 @@ import { useChat } from "../../context/ChatContext";
 import "./ChatWindow.css";
 import { BiArrowBack } from "react-icons/bi";
 import { FiPaperclip, FiPhone, FiSend, FiSmile, FiVideo } from "react-icons/fi";
+import { FaHeart, FaLaughBeam, FaSurprise, FaSadTear, FaAngry } from "react-icons/fa";
+import { FaThumbsUp } from "react-icons/fa6";
 import { useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { sendMessage } from "../../api/service/chat";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
@@ -18,14 +21,26 @@ export default function ChatWindow({ onCloseChat }) {
     loadOlderMessages,
     isLoadingOlderMessages,
     hasMoreOlderMessages,
+    reactToMessage,
   } = useChat();
   const { currentUser, isUserOnline } = useContext(UserContext);
   
   const [text, setText] = useState("");
+  const [openReactionMenuId, setOpenReactionMenuId] = useState(null);
+  const [openReactionDetailId, setOpenReactionDetailId] = useState(null);
   const bodyRef = useRef();
   const preserveScrollRef = useRef(false);
   const previousScrollTopRef = useRef(0);
   const previousScrollHeightRef = useRef(0);
+
+  const reactionOptions = [
+    { id: 1, type: "LIKE", icon: FaThumbsUp, color: "#1877f2", title: "Thích" },
+    { id: 2, type: "LOVE", icon: FaHeart, color: "#ff3040", title: "Yêu thích" },
+    { id: 3, type: "HAHA", icon: FaLaughBeam, color: "#f7b125", title: "Haha" },
+    { id: 4, type: "WOW", icon: FaSurprise, color: "#f7b125", title: "Wow" },
+    { id: 5, type: "SAD", icon: FaSadTear, color: "#9aa4b2", title: "Buồn" },
+    { id: 6, type: "ANGRY", icon: FaAngry, color: "#f5533d", title: "Giận" },
+  ];
 
   const messageList = messages?.messages ?? [];
 
@@ -120,6 +135,76 @@ export default function ChatWindow({ onCloseChat }) {
     });
   };
 
+  const getReactionSummary = (reacts = []) => {
+    if (!Array.isArray(reacts) || !reacts.length) return [];
+
+    const summary = new Map();
+    reacts.forEach((react) => {
+      if (!react?.type) return;
+      const current = summary.get(react.type) || 0;
+      summary.set(react.type, current + 1);
+    });
+
+    return [...summary.entries()].map(([type, count]) => ({ type, count }));
+  };
+
+  const getReactionOption = (type) => {
+    const normalizedType = String(type || "").toUpperCase();
+    return reactionOptions.find(
+      (option) => option.type === normalizedType || String(option.id) === String(type),
+    );
+  };
+
+  const getReactionLabel = (type) => {
+    const option = getReactionOption(type);
+    return option?.title || String(type || "");
+  };
+
+  const sortReactionDetails = (reacts = []) => {
+    const currentUserId = Number(currentUser?.id);
+
+    return [...reacts].sort((left, right) => {
+      const leftIsMe = Number(left?.userId) === currentUserId;
+      const rightIsMe = Number(right?.userId) === currentUserId;
+
+      if (leftIsMe !== rightIsMe) return leftIsMe ? -1 : 1;
+
+      const leftName = `${left?.userFirstName || ""} ${left?.userLastName || ""}`.trim();
+      const rightName = `${right?.userFirstName || ""} ${right?.userLastName || ""}`.trim();
+
+      return leftName.localeCompare(rightName, "vi-VN");
+    });
+  };
+
+  const getReactionDetails = (reacts = []) => {
+    if (!Array.isArray(reacts) || !reacts.length) return [];
+
+    return sortReactionDetails(reacts).map((react) => {
+      const option = getReactionOption(react.type);
+      const Icon = option?.icon;
+      const fullName = `${react?.userFirstName || ""} ${react?.userLastName || ""}`.trim() ;
+      
+      return {
+        ...react,
+        fullName,
+        icon: Icon,
+        iconColor: option?.color,
+        iconTitle: option?.title || react.type,
+      };
+    });
+  };
+
+  const openReactionDetail = (messageId) => {
+    setOpenReactionMenuId(null);
+    setOpenReactionDetailId((current) => (current === messageId ? null : messageId));
+  };
+
+  const handleReactMessage = async (messageId, reactTypeId) => {
+    await reactToMessage({ messageId, reactTypeId });
+    setOpenReactionMenuId(null);
+    setOpenReactionDetailId(null);
+  };
+
   // 🚀 Gửi tin nhắn
   const handleSend = async () => {
     const content = text.trim();
@@ -196,11 +281,13 @@ export default function ChatWindow({ onCloseChat }) {
           const senderId = Number(msg?.senderId);
           const isMe = senderId === Number(currentUser?.id);
           const isLastReadMessage = isMe && msg.read === true && msg.id === lastReadMessageId;
+          const reactionSummary = getReactionSummary(msg.reacts);
           
           return (
             <div
               key={msg.id}
               className={`message-row ${isMe ? "right" : "left"}`}
+              onMouseLeave={() => setOpenReactionMenuId(null)}
             >
               {!isMe && (
                 <img
@@ -211,6 +298,20 @@ export default function ChatWindow({ onCloseChat }) {
               )}
 
               <div className={`bubble ${isMe ? "right" : "left"}`}>
+                <button
+                  type="button"
+                  className="message-react-btn"
+                  aria-label="Thêm biểu cảm"
+                  title="Biểu cảm"
+                  onClick={() =>
+                    setOpenReactionMenuId((current) =>
+                      current === msg.id ? null : msg.id,
+                    )
+                  }
+                >
+                  <FiSmile size={14} />
+                </button>
+
                 <p className="text">{msg.content}</p>
                 <div className="bubble-footer">
                   <span className="time">{formatTime(msg.createdAt)}</span>
@@ -218,6 +319,124 @@ export default function ChatWindow({ onCloseChat }) {
                     <span className="seen-status">Đã xem</span>
                   )}
                 </div>
+
+                {reactionSummary.length > 0 && (
+                  <button
+                    type="button"
+                    className="reaction-summary"
+                    onClick={() => openReactionDetail(msg.id)}
+                    aria-label="Xem chi tiết cảm xúc"
+                    title="Xem chi tiết cảm xúc"
+                  >
+                    {reactionSummary.map((item) => (
+                      (() => {
+                        const option = getReactionOption(item.type);
+                        const Icon = option?.icon;
+
+                        return (
+                          <span key={item.type} className="reaction-chip" title={option?.title || item.type}>
+                            {Icon ? <Icon size={12} color={option?.color} /> : <span className="reaction-fallback">?</span>}
+                            <span>{item.count}</span>
+                          </span>
+                        );
+                      })()
+                    ))}
+                  </button>
+                )}
+
+                <AnimatePresence>
+                  {openReactionDetailId === msg.id && (
+                    <motion.div
+                      className="reaction-detail-popup"
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                      transition={{ duration: 0.16, ease: "easeOut" }}
+                    >
+                      <div className="reaction-detail-header">
+                        <div>
+                          <h4>Cảm xúc</h4>
+                          <p>{getReactionDetails(msg.reacts).length} người đã bày tỏ cảm xúc</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="reaction-detail-close"
+                          onClick={() => setOpenReactionDetailId(null)}
+                          aria-label="Đóng chi tiết cảm xúc"
+                        >
+                          ×
+                        </button>
+                      </div>
+
+                      <div className="reaction-detail-list">
+                        {getReactionDetails(msg.reacts).map((react, index) => {
+                          const Icon = react.icon;
+                          const isCurrentUserReact =
+                            react?.userId != null &&
+                            Number(react.userId) === Number(currentUser?.id);
+
+                          return (
+                            <div
+                              key={`${react.messageId}-${react.userId ?? react.fullName}-${react.type}-${index}`}
+                              className="reaction-detail-item"
+                            >
+                              <img
+                                src={getAvatarUrl(react.avatarUrl)}
+                                alt={react.fullName}
+                                className="reaction-detail-avatar"
+                                loading="lazy"
+                              />
+
+                              <div className="reaction-detail-meta">
+                                <div className="reaction-detail-name-row">
+                                  <span className="reaction-detail-name">{react.fullName}</span>
+                                  {isCurrentUserReact && (
+                                    <span className="reaction-detail-me">Bạn</span>
+                                  )}
+                                </div>
+                                <span className="reaction-detail-type">{getReactionLabel(react.type)}</span>
+                              </div>
+
+                              <span className="reaction-detail-icon" title={react.iconTitle} style={{ color: react.iconColor }}>
+                                {Icon ? <Icon size={18} /> : react.type}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {openReactionMenuId === msg.id && (
+                    <motion.div
+                      className="reaction-menu"
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+                      transition={{ duration: 0.16, ease: "easeOut" }}
+                    >
+                      {reactionOptions.map((option) => {
+                        const Icon = option.icon;
+
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className="reaction-menu-btn"
+                            onClick={() => handleReactMessage(msg.id, option.id)}
+                            aria-label={option.title}
+                            title={option.title}
+                            style={{ color: option.color }}
+                          >
+                            <Icon size={18} />
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           );
