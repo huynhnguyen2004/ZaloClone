@@ -1,44 +1,34 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ConversationList.css";
 import { useChat } from "../../context/ChatContext";
-import { getMyConversations } from "../../api/service/conversation";
 import { getAvatarUrl } from "../../utils/avatarHelper";
 import { UserContext } from "../../context/userContext";
+import { useConversation } from "../../context/conversationContext";
 
 export default function ConversationList() {
   const navigate = useNavigate();
- const { currentUser,isUserOnline } = useContext(UserContext);
-  const { openChat, activeChat, messages, newMessageTrigger } = useChat();
-  const [conversations, setConversations] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true); 
-  const didRun=useRef();
+  const { currentUser, isUserOnline } = useContext(UserContext);
+  const { openChat, activeChat } = useChat();
+  const {
+    conversations,
+    initialLoading,
+    loadMoreConversations,
+    hasMoreConversations,
+    isLoadingMoreConversations,
+  } = useConversation();
 
-  // 🔥 Load danh sách hội thoại - refresh khi có tin nhắn mới
-  useEffect(() => {
-     if (didRun.current) return;
-    didRun.current=true;
-    const fetchConversations = async () => {
-      if (!currentUser?.id) return;
+  const handleScroll = useCallback(
+    (e) => {
+      const { scrollTop, scrollHeight, clientHeight } = e.target;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50;
 
-      try {
-        const data = await getMyConversations();
-        // Sắp xếp theo thời gian tin nhắn mới nhất lên đầu
-        const sorted = (data || []).sort((a, b) => {
-          const timeA = new Date(a.createdAt || 0).getTime();
-          const timeB = new Date(b.createdAt || 0).getTime();
-          return timeB - timeA; // Mới nhất lên đầu
-        });
-        setConversations(sorted);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setInitialLoading(false); // Chỉ tắt loading lần đầu
+      if (isNearBottom && hasMoreConversations && !isLoadingMoreConversations) {
+        loadMoreConversations();
       }
-    };
-
-    fetchConversations();
-  }, [currentUser?.id, messages, newMessageTrigger]);
+    },
+    [hasMoreConversations, isLoadingMoreConversations, loadMoreConversations],
+  );
 
   // 🔥 Truncate tin nhắn cuối
   const formatTime = (dateStr) => {
@@ -140,7 +130,7 @@ export default function ConversationList() {
   // 🔥 Loading skeleton - Chỉ hiển thị lần đầu
   if (initialLoading) {
     return (
-      <div className="conversation-list">
+      <div className="conversation-list" onScroll={handleScroll}>
         {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="conversation-item skeleton">
             <div className="conversation-avatar-wrapper">
@@ -179,11 +169,13 @@ export default function ConversationList() {
   }
 
   return (
-    <div className="conversation-list">
+    <div className="conversation-list" onScroll={handleScroll}>
       {conversations.map((conv) => {
         const isActive = activeChat?.conversationId === conv.conversationId;
+        const isCurrentUserSender =
+          Number(conv.userIdLastMessage) === Number(currentUser?.id);
         // Kiểm tra tin nhắn chưa đọc (không phải do mình gửi)
-        const isUnread = conv.isReadLastContent === false && conv.userIdLastMessage !== currentUser?.id;
+        const isUnread = conv.isReadLastContent === false && !isCurrentUserSender;
 
         return (
           <div
@@ -225,7 +217,7 @@ export default function ConversationList() {
               </div>
               <div className="conversation-row">
                 <p className={`last-message ${isUnread ? "unread" : ""}`}>
-                  {conv.userIdLastMessage === currentUser?.id && (
+                  {isCurrentUserSender && (
                     <span className="me-prefix">Bạn: </span>
                   )}
                   {truncateMessage(conv.lastReadMessageContent)}
@@ -237,6 +229,9 @@ export default function ConversationList() {
           </div>
         );
       })}
+      {isLoadingMoreConversations && (
+        <div className="conversation-load-more">Đang tải thêm...</div>
+      )}
     </div>
   );
 }

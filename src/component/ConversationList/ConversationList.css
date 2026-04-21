@@ -9,6 +9,13 @@
   background: #ffffff;
 }
 
+.conversation-load-more {
+  padding: 10px 16px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #8a8d91;
+}
+
 /* Custom scrollbar */
 .conversation-list::-webkit-scrollbar {
   width: 6px;

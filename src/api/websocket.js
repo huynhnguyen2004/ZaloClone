@@ -24,6 +24,18 @@ let pendingSeen = null;
 
 const WS_BASE_URL = API_BASE_URL;
 
+const parseMessageBody = (body) => {
+  if (body == null) return null;
+
+  if (typeof body !== "string") return body;
+
+  try {
+    return JSON.parse(body);
+  } catch {
+    return body;
+  }
+};
+
 // =======================
 // CONNECT
 // =======================
@@ -96,12 +108,8 @@ if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
       callbacks.onReceiveMessage?.(JSON.parse(msg.body));
     });
 
+    
    
-    // ===== SEEN =====
-    client.subscribe(`/user/${userId}/queue/seen`, (msg) => {
-      callbacks.onSeenMessage?.(msg.body);
-    });
-
     client.subscribe(`/topic/notification/${userId}`,(msg)=>{
       callbacks.onReceiveNotification?.(JSON.parse(msg.body));
     })
@@ -201,7 +209,7 @@ export const subscribeToConversationSeen = (conversationId, callback) => {
   const topic = `/topic/conversations/${conversationId}/seen`;
 
   seenSubscription = stompClient.subscribe(topic, (msg) => {
-    callback?.(msg.body);
+    callback?.(parseMessageBody(msg.body));
   });
 
   console.log("👁️ Subscribed:", topic);

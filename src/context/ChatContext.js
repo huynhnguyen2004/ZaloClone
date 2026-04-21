@@ -4,6 +4,8 @@ import { getOrCreateConversation } from "../api/service/conversation";
 import {
   connectWebSocket,
   disconnectWebSocket,
+  subscribeToConversationSeen,
+  unsubscribeFromConversationSeen,
 } from "../api/websocket";
 import { UserContext } from "./userContext";
 
@@ -19,9 +21,9 @@ const emptyPage = {
 };
 
 const getConversationId = (message) =>
-  message?.conversation?.id ?? message?.conversationId ?? null;
+   message?.conversationId ?? null;
 
-const getSenderId = (message) => Number(message?.sender?.id ?? message?.senderId ?? 0);
+const getSenderId = (message) => Number(message?.senderId ?? 0);
 
 const normalizeMessageList = (list = []) => {
   const uniqueMap = new Map();
@@ -50,6 +52,15 @@ const normalizePage = (page) => {
   };
 };
 
+const getSeenUserId = (payload) => {
+  if (payload == null) return null;
+  if (typeof payload === "object") {
+    return Number(payload.userId ?? payload.seenUserId ?? payload.senderId ?? null);
+  }
+
+  return Number(payload);
+};
+
 export function ChatProvider({ children }) {
   // ==========================
   // STATE
@@ -59,6 +70,7 @@ export function ChatProvider({ children }) {
   const [unreadCount, setUnreadCount] = useState(0); // Số tin nhắn chưa đọc
   const [seenByFriend, setSeenByFriend] = useState(false);
   const [newMessageTrigger, setNewMessageTrigger] = useState(0);
+  const [lastRealtimeMessage, setLastRealtimeMessage] = useState(null);
   const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [isLoadingNewerMessages, setIsLoadingNewerMessages] = useState(false);
   const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(true);
@@ -89,29 +101,13 @@ export function ChatProvider({ children }) {
     connectWebSocket({
       userId: currentUser.id,
 
-      // Friend đã xem tin nhắn của mình trong cuộc trò chuyện đang mở.
-      onSeenMessage: (seenUserId) => {
-        const chat = activeChatRef.current;
-        if (!chat) return;
-
-        if (Number(seenUserId) !== Number(chat.friendId)) return;
-
-        setSeenByFriend(true);
-        setMessages((prev) => ({
-          ...prev,
-          messages: prev.messages.map((message) =>
-            getSenderId(message) === Number(currentUser.id)
-              ? { ...message, read: true }
-              : message,
-          ),
-        }));
-      },
-
       // Nhận tin nhắn realtime và merge vào page hiện tại nếu đúng conversation.
       onReceiveMessage: (message) => {
         const chat = activeChatRef.current;
         const incomingConversationId = getConversationId(message);
         if (!incomingConversationId) return;
+
+        setLastRealtimeMessage(message);
 
         if (Number(chat?.conversationId) === Number(incomingConversationId)) {
           setMessages((prev) => {
@@ -148,6 +144,40 @@ export function ChatProvider({ children }) {
 
     return () => disconnectWebSocket();
   }, [currentUser?.id]);
+
+  useEffect(() => {
+    const conversationId = activeChat?.conversationId;
+
+    unsubscribeFromConversationSeen();
+
+    if (!conversationId || !currentUser?.id) {
+      setSeenByFriend(false);
+      return;
+    }
+
+    subscribeToConversationSeen(conversationId, (payload) => {
+      const seenUserId = getSeenUserId(payload);
+      if (!seenUserId) return;
+
+      if (Number(seenUserId) !== Number(activeChatRef.current?.friendId)) {
+        return;
+      }
+
+      setSeenByFriend(true);
+      setMessages((prev) => ({
+        ...prev,
+        messages: prev.messages.map((message) =>
+          getSenderId(message) === Number(currentUser?.id)
+            ? { ...message, read: true }
+            : message,
+        ),
+      }));
+    });
+
+    return () => {
+      unsubscribeFromConversationSeen();
+    };
+  }, [activeChat?.conversationId, currentUser?.id]);
 
 
   // ==========================
@@ -317,6 +347,7 @@ export function ChatProvider({ children }) {
         unreadCount,
         clearUnread,
         newMessageTrigger,
+        lastRealtimeMessage,
         loadOlderMessages,
         loadNewerMessages,
         appendMessage,

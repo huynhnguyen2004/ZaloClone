@@ -40,10 +40,9 @@ export const changePass = async (userId, data) => {
   });
   return res.data.result;
 };
-export const seenProfile = async (meId, otherId) => {
+export const seenProfile = async (otherId) => {
   const res = await api.get("/api/user/seen", {
     params: {
-      meId: meId,
       otherId: otherId,
     },
   });

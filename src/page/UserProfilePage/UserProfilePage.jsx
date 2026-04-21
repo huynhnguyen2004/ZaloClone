@@ -39,7 +39,7 @@ const RelationshipStatus = {
 function UserProfilePage() {
     const navigate = useNavigate();
     const { userId } = useParams();
-     const { currentUser } = useContext(UserContext);
+     const { currentUser,isUserOnline } = useContext(UserContext);
     const { removeFriendRequest } = useFriend();
     const { openChat } = useChat();
     
@@ -69,7 +69,7 @@ function UserProfilePage() {
     const fetchProfile = async () => {
         try {
             setLoading(true);
-            const data = await seenProfile(currentUser.id, userId);
+            const data = await seenProfile( userId);
             setProfile(data);
         } catch (err) {
             console.error("Fetch profile error:", err);
@@ -79,6 +79,8 @@ function UserProfilePage() {
         }
     };
 
+    
+    
     // Xử lý quay lại
     const handleBack = () => {
         navigate(-1);
@@ -174,7 +176,7 @@ function UserProfilePage() {
                 friendId: profile.id,
                 friendName: `${profile.firstname || ""} ${profile.lastname || ""}`.trim(),
                 avatarUrl: profile.avatarUrl,
-                online: profile.online || false
+                online: isUserOnline(profile.id) || false
             });
             navigate("/home");
         }
@@ -403,7 +405,7 @@ function UserProfilePage() {
                             className="up-avatar-img"
                         />
                         {/* Online status indicator */}
-                        <span className={`up-online-status ${profile.online ? 'online' : 'offline'}`}></span>
+                        <span className={`up-online-status ${isUserOnline(profile.id) ? 'online' : 'offline'}`}></span>
                     </div>
                 </div>
 

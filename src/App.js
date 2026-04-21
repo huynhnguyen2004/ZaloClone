@@ -14,33 +14,36 @@ import AdminSettings from "./page/Admin/AdminSettings/AdminSettings";
 import { UserProvider } from "./context/userContext";
 import { FriendProvider } from "./context/friendContext";
 import { NotificationProvider } from "./context/notificationContext";
+import { ConversationProvider } from "./context/conversationContext";
 
 
 function App() {
   return (
     <UserProvider>
       <ChatProvider>
-        <FriendProvider>
-           <NotificationProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<AuthPage />} />
-              <Route path="/auth" element={<AuthPage />} />
+        <ConversationProvider>
+          <FriendProvider>
+            <NotificationProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<AuthPage />} />
+                  <Route path="/auth" element={<AuthPage />} />
 
-              <Route path="/home" element={<CustomerLayout />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/user/:userId" element={<UserProfilePage />} />
+                  <Route path="/home" element={<CustomerLayout />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/user/:userId" element={<UserProfilePage />} />
 
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-           </NotificationProvider>
-        </FriendProvider>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </NotificationProvider>
+          </FriendProvider>
+        </ConversationProvider>
       </ChatProvider>
     </UserProvider>
   );

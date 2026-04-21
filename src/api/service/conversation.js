@@ -5,7 +5,12 @@ export const getOrCreateConversation = async (params) => {
   });
   return res.data.result;
 };
-export const getMyConversations = async (userId) => {
-  const res = await api.get("/api/conversations");
+export const getMyConversations = async ({ size = 20, lastMessageId } = {}) => {
+  const res = await api.get("/api/conversations", {
+    params: {
+      size,
+      ...(lastMessageId != null && { lastMessageId }),
+    },
+  });
   return res.data.result;
 };
