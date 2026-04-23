@@ -109,6 +109,14 @@ if( onPresenceChange!==undefined) callbacks.onPresenceChange=onPresenceChange
     // ===== CHAT =====
     client.subscribe(`/topic/chat/${userId}`, (msg) => {
       const payload = parseMessageBody(msg.body);
+      if (
+        !payload ||
+        typeof payload !== "object" ||
+        payload.id == null ||
+        payload.conversationId == null
+      ) {
+        return;
+      }
       callbacks.onReceiveMessage?.(payload);
     });
 

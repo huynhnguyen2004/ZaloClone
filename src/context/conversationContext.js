@@ -128,20 +128,34 @@ export const ConversationProvider = ({ children }) => {
       }
 
       const currentConversation = prev[index];
+      const isCurrentUserSender =
+        Number(lastRealtimeMessage?.senderId) === Number(currentUser?.id);
       const updatedConversation = {
         ...currentConversation,
+        // New schema fields
+        lastMessage:
+          getRealtimeMessageContent(lastRealtimeMessage) ||
+          currentConversation.lastMessage,
+        lastMessageTime:
+          lastRealtimeMessage?.createdAt || currentConversation.lastMessageTime,
+        lastSenderId:
+          Number(
+            lastRealtimeMessage?.senderId ?? currentConversation.lastSenderId,
+          ),
+        isRead: isCurrentUserSender,
+        lastMessageId:
+          lastRealtimeMessage?.id ?? currentConversation.lastMessageId,
+        // Backward compatible fields
         lastReadMessageContent:
           getRealtimeMessageContent(lastRealtimeMessage) ||
           currentConversation.lastReadMessageContent,
-        createdAt: lastRealtimeMessage?.createdAt || currentConversation.createdAt,
+        createdAt:
+          lastRealtimeMessage?.createdAt || currentConversation.createdAt,
         userIdLastMessage:
           Number(
             lastRealtimeMessage?.senderId ?? currentConversation.userIdLastMessage,
           ),
-        isReadLastContent:
-          Number(lastRealtimeMessage?.senderId) === Number(currentUser?.id),
-        lastMessageId:
-          lastRealtimeMessage?.id ?? currentConversation.lastMessageId,
+        isReadLastContent: isCurrentUserSender,
       };
 
       const next = [...prev];

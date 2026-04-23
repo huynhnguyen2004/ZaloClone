@@ -20,6 +20,26 @@ const emptyPage = {
   nextAfter: null,
 };
 
+const extractMessageList = (page) => {
+  if (Array.isArray(page)) return page;
+  if (Array.isArray(page?.messages)) return page.messages;
+  if (Array.isArray(page?.items)) return page.items;
+  if (Array.isArray(page?.content)) return page.content;
+  if (Array.isArray(page?.data)) return page.data;
+
+  return [];
+};
+
+const getOldestMessageId = (list = []) => {
+  if (!list.length) return null;
+  return list[0]?.id ?? null;
+};
+
+const getNewestMessageId = (list = []) => {
+  if (!list.length) return null;
+  return list[list.length - 1]?.id ?? null;
+};
+
 const getConversationId = (message) =>
    message?.conversationId ?? null;
 
@@ -37,18 +57,12 @@ const normalizeMessageList = (list = []) => {
 };
 
 const normalizePage = (page) => {
-  const normalizedMessages = normalizeMessageList(page?.messages ?? []);
+  const normalizedMessages = normalizeMessageList(extractMessageList(page));
 
   return {
     messages: normalizedMessages,
-    nextBefore:
-      page?.nextBefore ??
-      (normalizedMessages.length ? normalizedMessages[0].id : null),
-    nextAfter:
-      page?.nextAfter ??
-      (normalizedMessages.length
-        ? normalizedMessages[normalizedMessages.length - 1].id
-        : null),
+    nextBefore: page?.nextBefore ?? null,
+    nextAfter: page?.nextAfter ?? null,
   };
 };
 
@@ -172,9 +186,14 @@ export function ChatProvider({ children }) {
 
       // Nhận tin nhắn realtime và merge vào page hiện tại nếu đúng conversation.
       onReceiveMessage: (message) => {
+        console.log(message);
+        
         const chat = activeChatRef.current;
         const incomingConversationId = getConversationId(message);
-        if (!incomingConversationId) return;
+        if (incomingConversationId == null || message?.id == null) return;
+
+        const isActiveConversation =
+          Number(chat?.conversationId) === Number(incomingConversationId);
 
         const existingMessage = messagesRef.current.messages.some(
           (item) => Number(item?.id) === Number(message?.id),
@@ -183,7 +202,7 @@ export function ChatProvider({ children }) {
           setLastRealtimeMessage(message);
         }
 
-        if (Number(chat?.conversationId) === Number(incomingConversationId)) {
+        if (isActiveConversation) {
           setMessages((prev) => {
             const mergedMessages = mergeMessageById(prev.messages, message);
 
@@ -248,7 +267,8 @@ export function ChatProvider({ children }) {
       const seenUserId = getSeenUserId(payload);
       if (!seenUserId) return;
 
-      if (Number(seenUserId) !== Number(activeChatRef.current?.friendId)) {
+      // Bỏ qua event do chính mình trigger khi vừa mở chat / đọc message.
+      if (Number(seenUserId) === Number(currentUser?.id)) {
         return;
       }
 
@@ -273,27 +293,49 @@ export function ChatProvider({ children }) {
   // OPEN CHAT + FIRST PAGE
   // ==========================
   const openChat = async (friend) => {
-    if (!currentUser?.id || !friend?.friendId) return;
+    if (!currentUser?.id) return;
+
+    const hasConversationId = Boolean(friend?.conversationId);
+    const hasFriendId = Boolean(friend?.friendId);
+
+    if (!hasConversationId && !hasFriendId) {
+      return;
+    }
 
     try {
       setMessages(emptyPage);
       setSeenByFriend(false);
       setHasMoreOlderMessages(true);
 
-      const data = await getOrCreateConversation({
-        userId: friend.friendId,
-      });
+      let data = null;
+      let conversationId = friend?.conversationId ?? null;
 
-      const conversationId = data.conversationId;
+      if (!conversationId && hasFriendId) {
+        data = await getOrCreateConversation({
+          userId: friend.friendId,
+        });
+        conversationId = data?.conversationId;
+      }
 
-      const chat = { ...friend, conversationId };
+      if (!conversationId) {
+        return;
+      }
+
+      const chat = {
+        ...friend,
+        conversationId,
+        type: friend?.type ?? data?.type,
+        avatarUrl: friend?.avatarUrl ?? data?.avatarUrl,
+        displayName: friend?.displayName ?? data?.nameGroup ?? friend?.friendName,
+        friendName: friend?.friendName ?? friend?.displayName ?? data?.nameGroup,
+      };
       setActiveChat(chat);
 
       const page = await getMessage({ conversationId, size: PAGE_SIZE });
       const normalizedPage = normalizePage(page);
 
       setMessages(normalizedPage);
-      setHasMoreOlderMessages((normalizedPage.messages ?? []).length === PAGE_SIZE);
+      setHasMoreOlderMessages(normalizedPage.nextBefore != null);
 
       // Reset số tin nhắn chưa đọc khi mở chat
       setUnreadCount(0);
@@ -313,7 +355,8 @@ export function ChatProvider({ children }) {
       return [];
     }
 
-    const before = messages?.nextBefore;
+    const currentMessages = messagesRef.current?.messages ?? [];
+    const before = getOldestMessageId(currentMessages) ?? messages?.nextBefore;
     if (!before) {
       setHasMoreOlderMessages(false);
       return [];
@@ -343,7 +386,7 @@ export function ChatProvider({ children }) {
         };
       });
 
-      setHasMoreOlderMessages(normalizedPage.messages.length === PAGE_SIZE);
+      setHasMoreOlderMessages(normalizedPage.nextBefore != null);
       return normalizedPage.messages;
     } catch (error) {
       console.error("❌ Load older messages error:", error);
@@ -361,7 +404,8 @@ export function ChatProvider({ children }) {
       return [];
     }
 
-    const after = messages?.nextAfter;
+    const currentMessages = messagesRef.current?.messages ?? [];
+    const after = getNewestMessageId(currentMessages) ?? messages?.nextAfter;
     if (!after) {
       return [];
     }

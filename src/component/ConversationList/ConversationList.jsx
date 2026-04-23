@@ -18,6 +18,8 @@ export default function ConversationList() {
     isLoadingMoreConversations,
   } = useConversation();
 
+  const isPrivateConversation = (type) => String(type || "").toUpperCase() === "PRIVATE";
+
   const handleScroll = useCallback(
     (e) => {
       const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -109,21 +111,25 @@ export default function ConversationList() {
   // 🔥 Click vào conversation
   const handleClick = (conv) => {
     const friendData = {
+      conversationId: conv.conversationId,
       friendId: conv.friendId,
-      friendName: conv.friendName || "Unknown",
-      avatarUrl: conv.friendAvatar,
-      online: conv.online,
+     
+      displayName: conv.displayName  || "Unknown",
+      avatarUrl: conv.avatar || conv.friendAvatar,
+      online: Boolean(conv.online),
       lastOnline: conv.lastOnline,
-      lastReadMessageContent:conv.lastReadMessageContent,
-      userIdLastMessage:conv.userIdLastMessage
+      lastReadMessageContent: conv.lastMessage || conv.lastReadMessageContent,
+  
+      type: conv.type,
     };
 
     openChat(friendData);
   };
 
   // 🔥 Click vào avatar để xem profile
-  const handleAvatarClick = (e, userId) => {
+  const handleAvatarClick = (e, userId, type) => {
     e.stopPropagation(); // Ngăn không cho click vào conversation
+    if (!isPrivateConversation(type) || !userId) return;
     navigate(`/user/${userId}`);
   };
 
@@ -173,9 +179,19 @@ export default function ConversationList() {
       {conversations.map((conv) => {
         const isActive = activeChat?.conversationId === conv.conversationId;
         const isCurrentUserSender =
-          Number(conv.userIdLastMessage) === Number(currentUser?.id);
+          Number(conv.lastSenderId ?? conv.userIdLastMessage) ===
+          Number(currentUser?.id);
         // Kiểm tra tin nhắn chưa đọc (không phải do mình gửi)
-        const isUnread = conv.isReadLastContent === false && !isCurrentUserSender;
+        const isUnread = (conv.isRead ?? conv.isReadLastContent) === false && !isCurrentUserSender;
+        const displayName = conv.displayName || conv.friendName || "Unknown";
+        const avatar = conv.avatar || conv.friendAvatar;
+        const messageTime = conv.lastMessageTime || conv.createdAt;
+        const lastMessage = conv.lastMessage || conv.lastReadMessageContent;
+        const canViewProfile = isPrivateConversation(conv?.type) && Boolean(conv?.friendId);
+        const canCheckRealtimeOnline = Boolean(conv.friendId);
+        const isOnline = canCheckRealtimeOnline
+          ? isUserOnline(conv.friendId)
+          : Boolean(conv.online);
 
         return (
           <div
@@ -186,15 +202,15 @@ export default function ConversationList() {
             {/* Avatar */}
             <div className="conversation-avatar-wrapper">
               <img
-                src={getAvatarUrl(conv.friendAvatar)}
-                alt={conv.friendName}
-                className="conversation-avatar clickable-avatar"
+                src={getAvatarUrl(avatar)}
+                alt={displayName}
+                className={`conversation-avatar ${canViewProfile ? "clickable-avatar" : ""}`}
                 loading="lazy"
-                onClick={(e) => handleAvatarClick(e, conv.friendId)}
-                title="Xem thông tin"
+                onClick={(e) => handleAvatarClick(e, conv.friendId, conv.type)}
+                title={canViewProfile ? "Xem thông tin" : "Nhóm chat không có trang cá nhân"}
               />
               {/* Online: chấm xanh | Offline: badge thời gian */}
-              {(isUserOnline(conv.friendId) ) ? (
+              {isOnline ? (
                 <span className="online-indicator"></span>
               ) : (
                 conv.lastOnline && formatLastOnline(conv.lastOnline) && (
@@ -209,10 +225,10 @@ export default function ConversationList() {
             <div className="conversation-info">
               <div className="conversation-row">
                 <h4 className={`conversation-name ${isUnread ? "unread" : ""}`}>
-                  {conv.friendName} {conv.friendlastName}
+                  {displayName}
                 </h4>
                 <span className={`conversation-time ${isUnread ? "unread" : ""}`}>
-                  {formatTime(conv.createdAt)}
+                  {formatTime(messageTime)}
                 </span>
               </div>
               <div className="conversation-row">
@@ -220,7 +236,7 @@ export default function ConversationList() {
                   {isCurrentUserSender && (
                     <span className="me-prefix">Bạn: </span>
                   )}
-                  {truncateMessage(conv.lastReadMessageContent)}
+                  {truncateMessage(lastMessage)}
                 </p>
                 {/* Chấm tròn xanh khi có tin chưa đọc */}
                 {isUnread && <span className="unread-dot"></span>}

@@ -6,7 +6,7 @@ import { BiArrowBack } from "react-icons/bi";
 import { FiPaperclip, FiPhone, FiSend, FiSmile, FiVideo } from "react-icons/fi";
 import { FaHeart, FaLaughBeam, FaSurprise, FaSadTear, FaAngry } from "react-icons/fa";
 import { FaThumbsUp } from "react-icons/fa6";
-import { useContext, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { sendMessage } from "../../api/service/chat";
 import { getAvatarUrl } from "../../utils/avatarHelper";
@@ -43,6 +43,15 @@ export default function ChatWindow({ onCloseChat }) {
   ];
 
   const messageList = messages?.messages ?? [];
+  const isPrivateConversation =
+    String(activeChat?.type || "").toUpperCase() === "PRIVATE";
+  const canViewProfile = isPrivateConversation && Boolean(activeChat?.friendId);
+  const chatDisplayName =
+    activeChat?.displayName ||
+    activeChat?.friendName ||
+    activeChat?.nameGroup ||
+    "Cuộc trò chuyện";
+  const chatAvatarUrl = activeChat?.avatarUrl;
 
   const lastReadMessageId = useMemo(() => {
     const myMessages = messageList.filter(
@@ -102,6 +111,43 @@ export default function ChatWindow({ onCloseChat }) {
     // Mặc định luôn kéo xuống tin nhắn mới nhất.
     body.scrollTop = body.scrollHeight;
   }, [messageList.length]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fillViewportWithHistory = async () => {
+      const body = bodyRef.current;
+
+      if (
+        !body ||
+        !activeChat?.conversationId ||
+        isLoadingOlderMessages ||
+        !hasMoreOlderMessages
+      ) {
+        return;
+      }
+
+      while (
+        !cancelled &&
+        bodyRef.current &&
+        hasMoreOlderMessages &&
+        !isLoadingOlderMessages &&
+        bodyRef.current.scrollHeight <= bodyRef.current.clientHeight + 8
+      ) {
+        const older = await loadOlderMessages();
+
+        if (!older.length) {
+          break;
+        }
+      }
+    };
+
+    fillViewportWithHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChat?.conversationId, hasMoreOlderMessages, isLoadingOlderMessages, loadOlderMessages, messageList.length]);
 
   const handleScroll = async () => {
     const body = bodyRef.current;
@@ -211,8 +257,6 @@ export default function ChatWindow({ onCloseChat }) {
     if (!content) return;
 
     const msgBody = {
-      senderId: currentUser.id,
-      receiverId: activeChat.friendId,
       conversationId: activeChat.conversationId,
       content,
     };
@@ -236,15 +280,15 @@ export default function ChatWindow({ onCloseChat }) {
         </button>
 
         <img
-          src={getAvatarUrl(activeChat.avatarUrl)}
-          className="chat-avatar clickable"
-          alt={activeChat.friendName}
-          onClick={() => navigate(`/user/${activeChat.friendId}`)}
-          title="Xem trang cá nhân"
+          src={getAvatarUrl(chatAvatarUrl)}
+          className={`chat-avatar ${canViewProfile ? "clickable" : ""}`}
+          alt={chatDisplayName}
+          onClick={() => canViewProfile && navigate(`/user/${activeChat.friendId}`)}
+          title={canViewProfile ? "Xem trang cá nhân" : "Nhóm chat không có trang cá nhân"}
         />
 
         <div className="chat-info">
-          <h3 className="chat-title">{activeChat?.friendName} {activeChat?.friendlastName}</h3>
+          <h3 className="chat-title">{chatDisplayName}</h3>
           <span className={`chat-status ${isFriendOnline ? "online" : "offline"}`}>
             {isFriendOnline ? (
               <>
@@ -291,8 +335,8 @@ export default function ChatWindow({ onCloseChat }) {
             >
               {!isMe && (
                 <img
-                  src={getAvatarUrl(activeChat.avatarUrl)}
-                  alt={activeChat.friendName}
+                  src={getAvatarUrl(chatAvatarUrl)}
+                  alt={chatDisplayName}
                   className="bubble-avatar"
                 />
               )}

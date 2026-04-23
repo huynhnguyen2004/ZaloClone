@@ -1,7 +1,10 @@
 import api from "../api";
 
-export const sendMessage = async (data) => {
-  const res = await api.post("/api/message/send", data);
+export const sendMessage = async ({ conversationId, content }) => {
+  const res = await api.post("/api/message/send", {
+    conversationId,
+    content,
+  });
   return res.data.result;
 };
 export const sendReact = async (params) => {
